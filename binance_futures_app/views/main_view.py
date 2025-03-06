@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem, QPushButton, QDoubleSpinBox
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem, QPushButton
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -39,11 +39,6 @@ class MainView(QMainWindow):
         # Tạo label hiển thị trạng thái giao dịch tự động
         self.auto_trading_status = QLabel("Giao dịch tự động: Đã tắt")
         self.verticalLayout_2.addWidget(self.auto_trading_status)
-        
-        # Tạo formLayout để chứa các controls như stopLoss và takeProfit
-        from PyQt5.QtWidgets import QFormLayout
-        self.formLayout = QFormLayout()
-        self.verticalLayout.addLayout(self.formLayout)
         # Thiết lập header cho bảng giao dịch
         self.tradeTable.setColumnCount(12)
         self.tradeTable.setHorizontalHeaderLabels([
@@ -64,28 +59,6 @@ class MainView(QMainWindow):
         header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Stop Loss
         header.setSectionResizeMode(10, QHeaderView.ResizeToContents)  # Take Profit
         header.setSectionResizeMode(11, QHeaderView.ResizeToContents)  # Trạng thái
-
-        # Spin box cho Stop Loss (giá trị thực, không phải %)
-        self.stopLossSpinBox = QDoubleSpinBox(self)
-        self.stopLossSpinBox.setMaximum(1000000.0)
-        self.stopLossSpinBox.setDecimals(2)
-        self.stopLossSpinBox.setValue(0.0)  # Mặc định là 0
-        self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
-        self.stopLossSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
-        
-        # Thêm stopLossSpinBox vào form layout
-        self.formLayout.addRow("Stop Loss:", self.stopLossSpinBox)
-
-        # Spin box cho Take Profit (giá trị thực, không phải %)
-        self.takeProfitSpinBox = QDoubleSpinBox(self)
-        self.takeProfitSpinBox.setMaximum(1000000.0)
-        self.takeProfitSpinBox.setDecimals(2)
-        self.takeProfitSpinBox.setValue(0.0)  # Mặc định là 0
-        self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
-        self.takeProfitSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
-        
-        # Thêm takeProfitSpinBox vào form layout
-        self.formLayout.addRow("Take Profit:", self.takeProfitSpinBox)
 
         # Tạo QWebEngineView cho biểu đồ
         self.chart_view = QWebEngineView()
@@ -349,3 +322,19 @@ class MainView(QMainWindow):
                 # Gửi tín hiệu đóng vị thế với các tham số cụ thể
                 self.close_position_signal.emit(str(trade_id), symbol, side)
                 logging.info(f"Emitted close_position_signal for: ID={trade_id}, Symbol={symbol}, Side={side}")
+
+# Spin box cho Stop Loss (giá trị thực, không phải %)
+        self.stopLossSpinBox = QDoubleSpinBox(self)
+        self.stopLossSpinBox.setMaximum(1000000.0)
+        self.stopLossSpinBox.setDecimals(2)
+        self.stopLossSpinBox.setValue(0.0)  # Mặc định là 0
+        self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
+        self.stopLossSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
+
+        # Spin box cho Take Profit (giá trị thực, không phải %)
+        self.takeProfitSpinBox = QDoubleSpinBox(self)
+        self.takeProfitSpinBox.setMaximum(1000000.0)
+        self.takeProfitSpinBox.setDecimals(2)
+        self.takeProfitSpinBox.setValue(0.0)  # Mặc định là 0
+        self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
+        self.takeProfitSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
