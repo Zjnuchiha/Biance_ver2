@@ -3,6 +3,8 @@ import datetime
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
 from config.logging_config import setup_logger
+from binance.client import ClientError
+import logging
 
 # Tạo logger cho module này
 logger = setup_logger(__name__)
@@ -453,14 +455,27 @@ class TradeController(QObject):
 
                 logger.info(f"Closing position: Symbol={symbol}, Side={close_side}, Quantity={quantity}")
 
-                # Đặt lệnh đóng vị thế với số lượng chính xác thay vì sử dụng closePosition=True
-                result = self.binance_client.client.new_order(
-                    symbol=symbol,
-                    side=close_side,
-                    type="MARKET",
-                    quantity=quantity,
-                    reduceOnly=True  # Sử dụng reduceOnly thay vì closePosition
-                )
+                try:
+                    result = self.binance_client.client.new_order(
+                        symbol=symbol,
+                        side=close_side,
+                        type="MARKET",
+                        quantity=quantity,
+                        reduceOnly=True  # Sử dụng reduceOnly thay vì closePosition
+                    )
+                except ClientError as e:
+                    error_msg = str(e)
+                    if "-2015" in error_msg and "Invalid API-key" in error_msg:
+                        # Kiểm tra lại kết nối API
+                        is_connected, msg = self.binance_client.check_connection()
+                        if not is_connected:
+                            logging.error(f"Lỗi kết nối API: {msg}")
+                            raise Exception(f"Lỗi kết nối API: {msg}")
+                        else:
+                            logging.error(f"Lỗi quyền hạn API: {error_msg}")
+                            raise Exception(f"API key không có quyền đóng vị thế. Hãy kiểm tra cài đặt API key của bạn.")
+                    else:
+                        raise
 
                 logger.info(f"Close position result: {result}")
 

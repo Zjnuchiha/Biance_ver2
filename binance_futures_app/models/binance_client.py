@@ -3,6 +3,8 @@ import logging
 from binance.um_futures import UMFutures
 from binance.error import ClientError
 import datetime
+
+logger = logging.getLogger(__name__)
 class BinanceClientModel:
     def __init__(self, api_key="", api_secret=""):
         self.api_key = api_key
@@ -292,6 +294,29 @@ class BinanceClientModel:
             # Thử lấy vị thế để kiểm tra quyền truy cập futures
             positions = self.client.get_position_risk()
             
+            # Thử tạo lệnh test để kiểm tra quyền trading
+            try:
+                test_order = self.client.new_order(
+                    symbol="BTCUSDT",
+                    side="BUY",
+                    type="LIMIT",
+                    timeInForce="GTC",
+                    quantity=0.001,
+                    price=1,
+                    newOrderRespType="ACK",
+                    reduceOnly=False,
+                    newClientOrderId="test_order",
+                    test=True  # Chế độ test, không thực sự đặt lệnh
+                )
+                # Nếu test thành công, có đủ quyền trading
+                return True, "API key hợp lệ và có đủ quyền"
+            except ClientError as trade_error:
+                if "-2015" in str(trade_error):
+                    return False, "API key hợp lệ nhưng không có quyền trading. Hãy kiểm tra cài đặt API key của bạn."
+                else:
+                    # Vẫn có vị thế, nhưng gặp lỗi khác khi test trading
+                    return True, "API key có thể bị hạn chế một số quyền. Lỗi: " + str(trade_error)
+                
             return True, "API key hợp lệ và có đủ quyền"
         except ClientError as e:
             error_code = str(e).split(':')[0] if ':' in str(e) else "Unknown"
@@ -305,3 +330,40 @@ class BinanceClientModel:
                 return False, f"Lỗi khi kiểm tra API key: {e}"
         except Exception as e:
             return False, f"Lỗi không xác định khi kiểm tra API key: {e}"
+    def check_connection(self):
+        """Kiểm tra kết nối và quyền của API key"""
+        if not self.api_key or not self.api_secret:
+            return False, "Chưa cấu hình API key"
+            
+        try:
+            # Kiểm tra trạng thái tài khoản
+            account_info = self.client.account()
+            
+            # Kiểm tra quyền trading
+            try:
+                test_order = self.client.new_order_test(
+                    symbol="BTCUSDT",
+                    side="BUY",
+                    type="LIMIT",
+                    timeInForce="GTC",
+                    quantity=0.001,
+                    price=1
+                )
+                return True, "API key hợp lệ và có đủ quyền"
+            except ClientError as e:
+                if "-2015" in str(e):
+                    logger.warning(f"API key không có quyền trading: {str(e)}")
+                    return False, "API key không có quyền trading. Vui lòng kiểm tra cài đặt quyền trong tài khoản Binance của bạn."
+                return False, f"Lỗi kiểm tra quyền trading: {str(e)}"
+                
+            return True, "API key hợp lệ" 
+        except ClientError as e:
+            logger.error(f"Lỗi kiểm tra kết nối: {str(e)}")
+            if "-2015" in str(e):
+                return False, "API key không hợp lệ hoặc không đủ quyền"
+            elif "timeout" in str(e).lower():
+                return False, "Kết nối tới Binance bị timeout" 
+            return False, f"Lỗi kết nối: {str(e)}"
+        except Exception as e:
+            logger.error(f"Lỗi không xác định: {str(e)}")
+            return False, f"Lỗi không xác định: {str(e)}"
