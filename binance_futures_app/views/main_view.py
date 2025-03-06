@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem, QPushButton
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem, QPushButton, QDoubleSpinBox
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -323,7 +323,7 @@ class MainView(QMainWindow):
                 self.close_position_signal.emit(str(trade_id), symbol, side)
                 logging.info(f"Emitted close_position_signal for: ID={trade_id}, Symbol={symbol}, Side={side}")
 
-# Spin box cho Stop Loss (giá trị thực, không phải %)
+        # Spin box cho Stop Loss (giá trị thực, không phải %)
         self.stopLossSpinBox = QDoubleSpinBox(self)
         self.stopLossSpinBox.setMaximum(1000000.0)
         self.stopLossSpinBox.setDecimals(2)
