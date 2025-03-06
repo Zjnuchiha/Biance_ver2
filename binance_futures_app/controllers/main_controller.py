@@ -201,7 +201,7 @@ class MainController:
         """Tải lịch sử giao dịch - Chỉ lấy ID từ local DB và tải thông tin chi tiết từ Binance"""
         try:
             # Lấy thông tin IDs giao dịch từ cơ sở dữ liệu
-            local_trades = self.trade_model.get_trades(self.username)
+            local_trades = self.trade_model.get_user_trades(self.username)
 
             # Nạp dữ liệu chi tiết từ Binance
             all_trades = []
