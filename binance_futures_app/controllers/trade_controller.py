@@ -333,11 +333,21 @@ class TradeController(QObject):
 
                                 # 4. Tìm SL/TP cho vị thế này
                                 try:
+                                    # Kiểm tra xem symbol có hợp lệ không
+                                    if not symbol or len(symbol.strip()) == 0:
+                                        logger.warning(f"Empty symbol when trying to get open orders")
+                                        continue
+                                    
                                     open_orders = self.binance_client.client.get_open_orders(symbol=symbol)
 
                                     # Lọc ra lệnh đang mở theo chiều ngược với vị thế
                                     closing_orders = []
                                     for order in open_orders:
+                                        # Kiểm tra xem order có orderId không
+                                        if not order.get('orderId'):
+                                            logger.warning(f"Found order without orderId for {symbol}")
+                                            continue
+                                            
                                         order_side = order.get('side', '')
                                         is_closing_order = (side == "BUY" and order_side == "SELL") or (side == "SELL" and order_side == "BUY")
 
