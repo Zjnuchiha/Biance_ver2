@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import json
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from config.config import APP_NAME, SETTINGS_FILE
@@ -79,9 +80,9 @@ def main():
 
 def initialize_database():
     """Khởi tạo cơ sở dữ liệu SQLite."""
-    from database_manager import DatabaseManager # Assumed to exist
+    from utils.database_manager import DatabaseManager
     db_manager = DatabaseManager()
-    db_manager.create_tables() # Assumed to exist in database_manager.py
+    # DatabaseManager đã tự động tạo bảng trong __init__ nên không cần gọi create_tables()
 
 if __name__ == "__main__":
     try:
