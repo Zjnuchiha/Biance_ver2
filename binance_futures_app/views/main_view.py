@@ -4,6 +4,7 @@ from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5 import uic
 import os
+import logging
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.config import UI_DIR, ICONS_DIR
@@ -52,7 +53,9 @@ class MainView(QMainWindow):
         header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Lời/Lỗ
         header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Nguồn
         header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Loại lệnh
-        
+        header.setSectionResizeMode(10, QHeaderView.ResizeToContents)  # Stoploss
+        header.setSectionResizeMode(11, QHeaderView.ResizeToContents)  # Takeprofit
+
         # Tạo QWebEngineView cho biểu đồ
         self.chart_view = QWebEngineView()
         
@@ -186,6 +189,7 @@ class MainView(QMainWindow):
             # Stop Loss và Take Profit
             sl_value = trade.get("stop_loss", "")
             tp_value = trade.get("take_profit", "")
+            logging.debug(f"Hiển thị lệnh với SL: {sl_value}, TP: {tp_value}")
             self.tradeTable.setItem(i, 10, QTableWidgetItem(f"{sl_value}%" if sl_value else ""))
             self.tradeTable.setItem(i, 11, QTableWidgetItem(f"{tp_value}%" if tp_value else ""))
     
