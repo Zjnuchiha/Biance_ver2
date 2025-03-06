@@ -1,6 +1,5 @@
 import sys
 import os
-import json
 import logging
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
@@ -32,19 +31,19 @@ root_logger.setLevel(logging.INFO)  # Chuyển từ DEBUG sang INFO để giảm
 root_logger.addHandler(log_handler)
 
 def main():
-    initialize_data_files()
+    #initialize_data_files() #Removed
     app = QApplication(sys.argv)
-    
+
     # Thiết lập thông tin ứng dụng
     app.setApplicationName(APP_NAME)
     try:
         app.setWindowIcon(QIcon("resources/icons/app_icon.png"))
     except:
         logging.warning("Không thể tải icon ứng dụng")
-    
+
     # Đặt stylesheet cơ bản cho ứng dụng
     app.setStyle("Fusion")
-    
+
     # Tải stylesheet từ file (nếu có)
     try:
         with open("resources/styles/styles.qss", "r") as f:
@@ -54,9 +53,9 @@ def main():
         try:
             with open(SETTINGS_FILE, "r") as f:
                 settings = json.load(f)
-            
+
             theme = settings.get("theme", "light")
-            
+
             # Áp dụng theme (đơn giản)
             if theme == "dark":
                 app.setStyleSheet("""
@@ -70,39 +69,28 @@ def main():
                 """)
         except:
             pass
-    
+
     # Tạo cửa sổ đăng nhập
     login_controller = LoginController()
     login_controller.show()
-    
+
     # Chạy ứng dụng
     return app.exec_()
-def initialize_data_files():
-    """Khởi tạo các file dữ liệu nếu chưa tồn tại hoặc rỗng"""
-    from config.config import USERS_FILE, TRADES_FILE, SETTINGS_FILE
-    import hashlib
-    import json
-    import os
-    
-    # Tạo thư mục data nếu chưa tồn tại
-    data_dir = os.path.dirname(USERS_FILE)
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-    
-    # Khởi tạo file users.json
-    try:
-        with open(USERS_FILE, "r") as f:
-            users_data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # Tạo file mới với dữ liệu mặc định
-        admin_pass = hashlib.sha256("@homonkey283".encode()).hexdigest()
-        users_data = {"admin": {"password": admin_pass, "role": "admin", "api_key": "", "api_secret": ""}}
-        with open(USERS_FILE, "w") as f:
-            json.dump(users_data, f, indent=4)
+
+def initialize_database():
+    """Khởi tạo cơ sở dữ liệu SQLite."""
+    from database_manager import DatabaseManager # Assumed to exist
+    db_manager = DatabaseManager()
+    db_manager.create_tables() # Assumed to exist in database_manager.py
 
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        # Khởi tạo database
+        initialize_database()
+
+        # Chạy ứng dụng
+        exit_code = main()
+        sys.exit(exit_code)
     except Exception as e:
         logging.critical(f"Lỗi không xử lý được: {e}", exc_info=True)
         print(f"Đã xảy ra lỗi: {e}")

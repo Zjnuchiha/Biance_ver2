@@ -1,0 +1,131 @@
+# requirements.txt
+PyQt5
+python-binance
+pandas
+pyqtgraph
+sqlite3
+
+# database_manager.py
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self, db_path="mydatabase.db"):
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+
+    def create_tables(self):
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            )
+        """)
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                symbol TEXT NOT NULL,
+                entry_price REAL NOT NULL,
+                exit_price REAL,
+                quantity REAL NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                key TEXT UNIQUE NOT NULL,
+                value TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+    # Add other database interaction methods as needed (e.g., insert, update, delete, select)
+
+
+# UserModel.py
+import database_manager
+
+class UserModel:
+    def __init__(self, db_manager=None):
+        if db_manager is None:
+            self.db_manager = database_manager.DatabaseManager()
+        else:
+            self.db_manager = db_manager
+
+    def create_user(self, username, password):
+        self.db_manager.cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        self.db_manager.conn.commit()
+        return self.db_manager.cursor.lastrowid
+
+    # Add other user-related methods (e.g., get_user, update_user, delete_user)
+
+
+# TradeModel.py
+import database_manager
+
+class TradeModel:
+    def __init__(self, db_manager=None):
+        if db_manager is None:
+            self.db_manager = database_manager.DatabaseManager()
+        else:
+            self.db_manager = db_manager
+
+    def create_trade(self, user_id, symbol, entry_price, quantity):
+        self.db_manager.cursor.execute("INSERT INTO trades (user_id, symbol, entry_price, exit_price, quantity) VALUES (?, ?, ?, NULL, ?)", (user_id, symbol, entry_price, quantity))
+        self.db_manager.conn.commit()
+        return self.db_manager.cursor.lastrowid
+
+    # Add other trade-related methods (e.g., update_trade, get_trades)
+
+
+# SettingsModel.py
+import database_manager
+
+class SettingsModel:
+    def __init__(self, db_manager=None):
+        if db_manager is None:
+            self.db_manager = database_manager.DatabaseManager()
+        else:
+            self.db_manager = db_manager
+
+    def set_setting(self, user_id, key, value):
+      self.db_manager.cursor.execute("INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)", (user_id, key, value))
+      self.db_manager.conn.commit()
+
+    def get_setting(self, user_id, key):
+      self.db_manager.cursor.execute("SELECT value FROM settings WHERE user_id = ? AND key = ?", (user_id, key))
+      result = self.db_manager.cursor.fetchone()
+      return result[0] if result else None
+
+    #Add other settings related methods
+
+
+# main.py
+import database_manager
+from UserModel import UserModel
+from TradeModel import TradeModel
+from SettingsModel import SettingsModel
+
+
+db_manager = database_manager.DatabaseManager()
+user_model = UserModel(db_manager)
+trade_model = TradeModel(db_manager)
+settings_model = SettingsModel(db_manager)
+
+
+# Example usage
+user_id = user_model.create_user("testuser", "password")
+trade_model.create_trade(user_id, "BTCUSDT", 30000, 0.1)
+settings_model.set_setting(user_id, "api_key", "your_api_key")
+
+print(settings_model.get_setting(user_id,"api_key"))
+
+db_manager.close()

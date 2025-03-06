@@ -16,6 +16,9 @@ USERS_FILE = os.path.join(DATA_DIR, "users.json")
 TRADES_FILE = os.path.join(DATA_DIR, "trades.json")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
+# SQLite Database path
+DATABASE_PATH = os.path.join(DATA_DIR, "binance_app.db")
+
 # Đảm bảo các thư mục tồn tại
 for directory in [DATA_DIR, ICONS_DIR, UI_DIR]:
     if not os.path.exists(directory):

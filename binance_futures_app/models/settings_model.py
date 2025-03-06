@@ -69,3 +69,69 @@ class SettingsModel:
             json.dump(settings, f)
         
         return True
+import os
+import json
+from config.config import SETTINGS_FILE, DATABASE_PATH
+from utils.database_manager import DatabaseManager
+from config.logging_config import setup_logger
+
+logger = setup_logger(__name__)
+
+class SettingsModel:
+    def __init__(self):
+        self.db = DatabaseManager()
+    
+    def get_user_settings(self, username):
+        """Lấy cài đặt của người dùng"""
+        settings = {}
+        rows = self.db.fetch_all("SELECT * FROM settings WHERE username = ?", (username,))
+        
+        for row in rows:
+            try:
+                # Thử chuyển đổi value từ chuỗi thành giá trị tương ứng
+                import ast
+                value = ast.literal_eval(row['value'])
+            except (ValueError, SyntaxError):
+                # Nếu không chuyển đổi được, giữ nguyên giá trị chuỗi
+                value = row['value']
+            
+            settings[row['key']] = value
+        
+        return settings
+    
+    def save_user_setting(self, username, key, value):
+        """Lưu một cài đặt của người dùng"""
+        # Chuyển đổi giá trị thành chuỗi để lưu vào database
+        str_value = str(value)
+        
+        # Kiểm tra xem cài đặt đã tồn tại chưa
+        row = self.db.fetch_one("SELECT * FROM settings WHERE username = ? AND key = ?", (username, key))
+        
+        if row:
+            # Cập nhật cài đặt hiện có
+            success = self.db.execute_query(
+                "UPDATE settings SET value = ? WHERE username = ? AND key = ?",
+                (str_value, username, key)
+            )
+        else:
+            # Thêm cài đặt mới
+            success = self.db.execute_query(
+                "INSERT INTO settings (username, key, value) VALUES (?, ?, ?)",
+                (username, key, str_value)
+            )
+        
+        return success
+    
+    def delete_user_setting(self, username, key):
+        """Xóa một cài đặt của người dùng"""
+        return self.db.execute_query(
+            "DELETE FROM settings WHERE username = ? AND key = ?",
+            (username, key)
+        )
+    
+    def delete_all_user_settings(self, username):
+        """Xóa tất cả cài đặt của người dùng"""
+        return self.db.execute_query(
+            "DELETE FROM settings WHERE username = ?",
+            (username,)
+        )
