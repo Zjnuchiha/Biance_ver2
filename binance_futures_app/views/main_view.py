@@ -65,6 +65,12 @@ class MainView(QMainWindow):
         self.chart_view.setMinimumSize(900, 600)  # Đảm bảo kích thước đủ lớn
         self.chart_view.setZoomFactor(0.9)  # Giảm tỷ lệ zoom để hiển thị đầy đủ
         
+        # Bỏ qua lỗi CSP từ Binance
+        profile = self.chart_view.page().profile()
+        settings = self.chart_view.settings()
+        settings.setAttribute(settings.WebAttribute.JavascriptCanAccessClipboard, True)
+        settings.setAttribute(settings.WebAttribute.LocalContentCanAccessRemoteUrls, True)
+        
         # Thêm vào container
         self.chartContainer.addWidget(self.chart_view)
         
