@@ -24,16 +24,16 @@ class MainController:
         self.user_data = user_data
         
         # Khởi tạo models
-        logging.info(f"Initialization BinanceClientModel with API key: {'*****' if user_data['api_key'] else 'does not exist'}")
+        logger.info(f"Initialization BinanceClientModel with API key: {'*****' if user_data['api_key'] else 'does not exist'}")
         self.binance_client = BinanceClientModel(user_data["api_key"], user_data["api_secret"])
         self.trade_model = TradeModel()
         self.settings_model = SettingsModel()
         
         # Kiểm tra kết nối
         if self.binance_client.is_connected():
-            logging.info("Successfully connected to Binance API")
+            logger.info("Successfully connected to Binance API")
         else:
-            logging.warning("Connection failed to Binance API")
+            logger.warning("Connection failed to Binance API")
 
         # Khởi tạo view
         self.view = MainView(username)
@@ -237,7 +237,7 @@ class MainController:
         
         except Exception as e:
             error_msg = f"Lỗi khi tải dữ liệu giao dịch: {e}"
-            logging.error(error_msg)
+            logger.error(error_msg)
             self.view.statusbar.showMessage(error_msg, 5000)
     
     def filter_trades(self, filter_text):
