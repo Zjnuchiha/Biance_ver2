@@ -14,7 +14,7 @@ class TradeModel:
     def get_user_trades(self, username):
         """Lấy lịch sử giao dịch của người dùng"""
         trades = []
-        rows = self.db.fetch_all("SELECT * FROM trades WHERE username = ? ORDER BY entry_time DESC", (username,))
+        rows = self.db.fetch_all("SELECT * FROM trades WHERE username = ? ORDER BY timestamp DESC", (username,))
 
         for row in rows:
             trade = dict(row)
@@ -106,7 +106,7 @@ class TradeModel:
         """Lấy các giao dịch đang mở của người dùng"""
         trades = []
         rows = self.db.fetch_all(
-            "SELECT * FROM trades WHERE username = ? AND status = 'OPEN' ORDER BY entry_time DESC", 
+            "SELECT * FROM trades WHERE username = ? AND status = 'OPEN' ORDER BY timestamp DESC", 
             (username,)
         )
 
