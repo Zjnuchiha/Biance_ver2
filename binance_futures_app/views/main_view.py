@@ -39,6 +39,11 @@ class MainView(QMainWindow):
         # Tạo label hiển thị trạng thái giao dịch tự động
         self.auto_trading_status = QLabel("Giao dịch tự động: Đã tắt")
         self.verticalLayout_2.addWidget(self.auto_trading_status)
+        
+        # Tạo formLayout để chứa các controls như stopLoss và takeProfit
+        from PyQt5.QtWidgets import QFormLayout
+        self.formLayout = QFormLayout()
+        self.verticalLayout.addLayout(self.formLayout)
         # Thiết lập header cho bảng giao dịch
         self.tradeTable.setColumnCount(12)
         self.tradeTable.setHorizontalHeaderLabels([
