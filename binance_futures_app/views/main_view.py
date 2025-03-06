@@ -199,9 +199,9 @@ class MainView(QMainWindow):
             tp_value = trade.get("take_profit", "")
             logging.debug(f"Show order trade with ID {trade.get('id', 'N/A')}, SL: {sl_value}, TP: {tp_value}")
 
-            # Chuyển đổi thành chuỗi và hiển thị với dấu phần trăm
-            sl_item = QTableWidgetItem(f"{sl_value}%" if sl_value else "")
-            tp_item = QTableWidgetItem(f"{tp_value}%" if tp_value else "")
+            # Hiển thị giá trị thực, không thêm dấu phần trăm
+            sl_item = QTableWidgetItem(f"{sl_value}" if sl_value else "")
+            tp_item = QTableWidgetItem(f"{tp_value}" if tp_value else "")
 
             # Thêm màu sắc để dễ nhận biết
             if sl_value:

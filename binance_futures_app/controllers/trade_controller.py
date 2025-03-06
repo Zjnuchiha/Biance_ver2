@@ -152,8 +152,8 @@ class TradeController(QObject):
             confirm = self.view.confirm_dialog(
                 f'Xác nhận {side}', 
                 f'Bạn có chắc chắn muốn đặt lệnh {side} {quantity} {symbol} với giá {current_price} không?\n'
-                f'Stop Loss: {stop_loss}%\n'
-                f'Take Profit: {take_profit}%'
+                f'Stop Loss: {stop_loss}\n'
+                f'Take Profit: {take_profit}'
             )
 
             if not confirm:
@@ -173,7 +173,7 @@ class TradeController(QObject):
                     'source': 'Manual',
                     'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                
+
                 # Lưu vào model
                 self.trade_model.add_trade(self.username, minimal_trade_info)
 
@@ -182,8 +182,8 @@ class TradeController(QObject):
                     "Thành công", 
                     f"Đã đặt lệnh {side} thành công\n"
                     f"Giá: {current_price}\n"
-                    f"SL: {stop_loss}%\n"
-                    f"TP: {take_profit}%"
+                    f"SL: {stop_loss}\n"
+                    f"TP: {take_profit}"
                 )
             else:
                 self.view.show_message("Lỗi", result, QMessageBox.Warning)
