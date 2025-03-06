@@ -3,7 +3,7 @@ import datetime
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
 from config.logging_config import setup_logger
-from binance.client import ClientError
+from binance.error import ClientError
 import logging
 
 # Tạo logger cho module này
