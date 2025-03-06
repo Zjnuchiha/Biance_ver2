@@ -36,7 +36,7 @@ rotating_handler = logging.handlers.RotatingFileHandler(
     backupCount=3,         # Giữ tối đa 3 file backup
     encoding='utf-8'
 )
-rotating_handler.setFormatter(formatter)
+rotating_handler.setFormatter(log_formatter)
 root_logger.addHandler(rotating_handler)
 
 def main():
