@@ -169,7 +169,9 @@ class MainView(QMainWindow):
 
             self.tradeTable.setItem(i, 3, QTableWidgetItem(str(trade["price"])))
             self.tradeTable.setItem(i, 4, QTableWidgetItem(str(trade["quantity"])))
-            self.tradeTable.setItem(i, 5, QTableWidgetItem(trade["timestamp"]))
+            # Hiển thị entry_time thay vì timestamp
+            entry_time = trade.get("entry_time", trade.get("timestamp", ""))
+            self.tradeTable.setItem(i, 5, QTableWidgetItem(entry_time))
 
             pnl_item = QTableWidgetItem(f"{trade.get('pnl', 0):.2f}")
             if trade.get("pnl", 0) > 0:
