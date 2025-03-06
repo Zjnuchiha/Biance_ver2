@@ -80,7 +80,7 @@ def main():
 
 def initialize_database():
     """Khởi tạo cơ sở dữ liệu SQLite."""
-    from utils.database_manager import DatabaseManager
+    from binance_futures_app.utils.database_manager import DatabaseManager
     db_manager = DatabaseManager()
     # DatabaseManager đã tự động tạo bảng trong __init__ nên không cần gọi create_tables()
 
