@@ -2,7 +2,7 @@ import os
 
 # Thông tin ứng dụng
 APP_NAME = "Binance Futures Trading"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.3"
 APP_AUTHOR = "Zjn_AnhTu"
 
 # Đường dẫn

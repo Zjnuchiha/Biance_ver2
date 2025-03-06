@@ -189,9 +189,20 @@ class MainView(QMainWindow):
             # Stop Loss và Take Profit
             sl_value = trade.get("stop_loss", "")
             tp_value = trade.get("take_profit", "")
-            logging.debug(f"Hiển thị lệnh với SL: {sl_value}, TP: {tp_value}")
-            self.tradeTable.setItem(i, 10, QTableWidgetItem(f"{sl_value}%" if sl_value else ""))
-            self.tradeTable.setItem(i, 11, QTableWidgetItem(f"{tp_value}%" if tp_value else ""))
+            logging.debug(f"Show order trade with ID {trade.get('id', 'N/A')}, SL: {sl_value}, TP: {tp_value}")
+
+            # Chuyển đổi thành chuỗi và hiển thị
+            sl_item = QTableWidgetItem(str(sl_value) if sl_value else "")
+            tp_item = QTableWidgetItem(str(tp_value) if tp_value else "")
+
+            # Thêm màu sắc để dễ nhận biết
+            if sl_value:
+                sl_item.setForeground(QColor(255, 0, 0))  # Đỏ
+            if tp_value:
+                tp_item.setForeground(QColor(0, 255, 0))  # Xanh lá
+
+            self.tradeTable.setItem(i, 10, sl_item)
+            self.tradeTable.setItem(i, 11, tp_item)
     
     def update_summary(self, total_profit, win_rate, update_time):
         """Cập nhật thông tin tổng kết"""

@@ -2,7 +2,7 @@ from views.user_management_view import UserManagementView
 from models.user_model import UserModel
 from models.trade_model import TradeModel
 from PyQt5.QtWidgets import QDialog, QFormLayout, QLineEdit, QComboBox, QHBoxLayout, QPushButton, QMessageBox
-import logging
+
 
 class UserController:
     def __init__(self, username, user_data):

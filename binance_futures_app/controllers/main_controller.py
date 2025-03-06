@@ -21,16 +21,16 @@ class MainController:
         self.user_data = user_data
         
         # Khởi tạo models
-        logging.info(f"Khởi tạo BinanceClientModel với API key: {'*****' if user_data['api_key'] else 'Không có'}")
+        logging.info(f"Initialization BinanceClientModel with API key: {'*****' if user_data['api_key'] else 'does not exist'}")
         self.binance_client = BinanceClientModel(user_data["api_key"], user_data["api_secret"])
         self.trade_model = TradeModel()
         self.settings_model = SettingsModel()
         
         # Kiểm tra kết nối
         if self.binance_client.is_connected():
-            logging.info("Kết nối thành công đến Binance API")
+            logging.info("Successfully connected to Binance API")
         else:
-            logging.warning("Không thể kết nối đến Binance API")
+            logging.warning("Connection failed to Binance API")
 
         # Khởi tạo view
         self.view = MainView(username)

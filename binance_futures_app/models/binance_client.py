@@ -47,7 +47,7 @@ class BinanceClientModel:
             ticker_response = self.client.ticker_price(symbol=symbol)
             return float(ticker_response['price'])
         except Exception as e:
-            logging.error(f"Lỗi khi lấy giá: {e}")
+            logging.error(f"Error getting price: {e}")
             return None
     
     def get_account_balance(self):
@@ -59,46 +59,82 @@ class BinanceClientModel:
             account_response = self.client.account()
             return account_response
         except Exception as e:
-            logging.error(f"Lỗi khi lấy số dư: {e}")
+            logging.error(f"Error getting account balance: {e}")
             return None
     
-    def get_open_orders(self):
+    def get_open_orders(self, symbol=None):
         """Lấy danh sách lệnh đang mở"""
         if not self.is_connected():
             return []
         
         try:
-            return self.client.get_open_orders()
+            # Binance API yêu cầu tham số symbol
+            if not symbol:
+                # Nếu không có symbol cụ thể, lấy lệnh từ các cặp giao dịch phổ biến
+                popular_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "ADAUSDT", "DOGEUSDT", "XRPUSDT", 
+                            "SOLUSDT", "AVAXUSDT", "DOTUSDT", "MATICUSDT", "LINKUSDT"]
+                
+                all_orders = []
+                for sym in popular_symbols:
+                    try:
+                        orders = self.client.get_open_orders(symbol=sym)
+                        all_orders.extend(orders)
+                    except Exception as e:
+                        logging.warning(f"Unable to get open orders for {sym}: {e}")
+                
+                return all_orders
+            else:
+                # Nếu có symbol cụ thể, lấy lệnh cho symbol đó
+                return self.client.get_open_orders(symbol=symbol)
         except Exception as e:
-            logging.error(f"Lỗi khi lấy lệnh mở: {e}")
+            logging.error(f"Error getting open orders: {e}")
             return []
     
     def get_positions(self):
-        """Lấy danh sách vị thế"""
+        """Lấy danh sách vị thế với thông tin đầy đủ"""
         if not self.is_connected():
-            logging.warning("Không thể lấy vị thế - API không được kết nối")
+            logging.warning("Cannot get positions - API not connected")
             return []
         
         try:
-            logging.info("Đang gọi API lấy vị thế...")
+            logging.info("Calling API to get positions...")
+            # Lấy thông tin vị thế
             positions = self.client.get_position_risk()
-            logging.info(f"Đã nhận {len(positions)} vị thế từ API")
+            logging.info(f"Received {len(positions)} positions from API")
+            
+            # Thử lấy thêm thông tin position stop-loss và position take-profit
+            try:
+                account_info = self.client.account()
+                if 'positions' in account_info:
+                    detailed_positions = account_info['positions']
+                    
+                    # Bổ sung thông tin từ account_info vào positions
+                    for position in positions:
+                        symbol = position['symbol']
+                        # Tìm thông tin chi tiết từ account_info
+                        for detailed_pos in detailed_positions:
+                            if detailed_pos['symbol'] == symbol:
+                                # Tìm stopPrice và thêm vào position
+                                if 'stopPrice' in detailed_pos and float(detailed_pos['stopPrice']) > 0:
+                                    position['stopPrice'] = detailed_pos['stopPrice']
+                                    logging.debug(f"Found stop price {detailed_pos['stopPrice']} for {symbol}")
+                                
+                                # Tìm thông tin take profit (có thể có tên trường khác)
+                                for field in ['takeProfitPrice', 'tpPrice', 'takeProfitTriggerPrice']:
+                                    if field in detailed_pos and float(detailed_pos.get(field, 0)) > 0:
+                                        position['takeProfitPrice'] = detailed_pos[field]
+                                        logging.debug(f"Found take profit {detailed_pos[field]} for {symbol}")
+                                        break
+            except Exception as e:
+                logging.error(f"Error getting detailed position info: {e}")
+                
             return positions
         except ClientError as e:
             error_msg = str(e)
-            logging.error(f"Lỗi ClientError khi lấy vị thế: {error_msg}")
-            
-            # Xử lý các lỗi cụ thể
-            if "Invalid API-key" in error_msg:
-                logging.error("API key không hợp lệ")
-            elif "Signature for this request is not valid" in error_msg:
-                logging.error("API secret không chính xác")
-            elif "API-key has no permission" in error_msg:
-                logging.error("API key không có quyền đọc thông tin vị thế")
-            
+            logging.error(f"ClientError when getting positions: {error_msg}")
             return []
         except Exception as e:
-            logging.error(f"Lỗi khi lấy vị thế: {e}", exc_info=True)
+            logging.error(f"Error getting positions: {e}", exc_info=True)
             return []
     
     def get_trade_history(self, symbol, limit=50):
@@ -107,17 +143,18 @@ class BinanceClientModel:
             return []
         
         try:
+            # Thời gian trong 7 ngày gần đây
             end_time = int(time.time() * 1000)
             start_time = end_time - (7 * 24 * 60 * 60 * 1000)  # 7 ngày
             
             return self.client.get_account_trades(
                 symbol=symbol,
-                startTime=start_time,
-                endTime=end_time,
+                startTime=start_time,  # Tham số của Binance API là 'startTime' không phải 'start_time'
+                endTime=end_time,      # Tham số của Binance API là 'endTime' không phải 'end_time'
                 limit=limit
             )
         except Exception as e:
-            logging.error(f"Lỗi khi lấy lịch sử giao dịch: {e}")
+            logging.error(f"Error getting trade history: {e}")
             return []
     
     def place_order(self, symbol, side, quantity, leverage=1, stop_loss=0, take_profit=0):
@@ -198,7 +235,7 @@ class BinanceClientModel:
         try:
             return self.client.exchange_info()
         except Exception as e:
-            logging.error(f"Lỗi khi lấy thông tin exchange: {e}")
+            logging.error(f"Error getting exchange info: {e}")
             return None
     
     def calculate_order_quantity(self, symbol, amount):
@@ -232,8 +269,9 @@ class BinanceClientModel:
             
             return round(quantity, precision)
         except Exception as e:
-            logging.error(f"Lỗi khi tính toán số lượng: {e}")
+            logging.error(f"Error calculating order quantity: {e}")
             return None
+    
     def validate_api_permissions(self):
         """Kiểm tra quyền của API key"""
         if not self.is_connected():
