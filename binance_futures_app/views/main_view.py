@@ -272,7 +272,15 @@ class MainView(QMainWindow):
     
     def show_message(self, title, message, icon=QMessageBox.Information):
         """Hiển thị thông báo"""
-        QMessageBox.information(self, title, message, icon)
+        # Sử dụng phương thức phù hợp theo loại icon
+        if icon == QMessageBox.Warning:
+            QMessageBox.warning(self, title, message)
+        elif icon == QMessageBox.Critical:
+            QMessageBox.critical(self, title, message)
+        elif icon == QMessageBox.Question:
+            QMessageBox.question(self, title, message)
+        else:  # Mặc định là Information
+            QMessageBox.information(self, title, message)
     
     def confirm_dialog(self, title, message):
         """Hiển thị hộp thoại xác nhận"""
@@ -293,6 +301,8 @@ class MainView(QMainWindow):
             symbol = button.property("symbol")
             side = button.property("side")
             
+            logging.info(f"Close position button clicked for: ID={trade_id}, Symbol={symbol}, Side={side}")
+            
             # Hiển thị dialog xác nhận
             confirm = self.confirm_dialog(
                 'Xác nhận đóng vị thế', 
@@ -300,5 +310,6 @@ class MainView(QMainWindow):
             )
             
             if confirm:
-                # Gửi tín hiệu đóng vị thế (sẽ được kết nối với controller)
-                self.close_position_signal.emit(trade_id, symbol, side)
+                # Gửi tín hiệu đóng vị thế với các tham số cụ thể
+                self.close_position_signal.emit(str(trade_id), symbol, side)
+                logging.info(f"Emitted close_position_signal for: ID={trade_id}, Symbol={symbol}, Side={side}")
