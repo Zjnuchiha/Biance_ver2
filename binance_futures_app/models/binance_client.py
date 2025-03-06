@@ -76,12 +76,29 @@ class BinanceClientModel:
     def get_positions(self):
         """Lấy danh sách vị thế"""
         if not self.is_connected():
+            logging.warning("Không thể lấy vị thế - API không được kết nối")
             return []
         
         try:
-            return self.client.get_position_risk()
+            logging.info("Đang gọi API lấy vị thế...")
+            positions = self.client.get_position_risk()
+            logging.info(f"Đã nhận {len(positions)} vị thế từ API")
+            return positions
+        except ClientError as e:
+            error_msg = str(e)
+            logging.error(f"Lỗi ClientError khi lấy vị thế: {error_msg}")
+            
+            # Xử lý các lỗi cụ thể
+            if "Invalid API-key" in error_msg:
+                logging.error("API key không hợp lệ")
+            elif "Signature for this request is not valid" in error_msg:
+                logging.error("API secret không chính xác")
+            elif "API-key has no permission" in error_msg:
+                logging.error("API key không có quyền đọc thông tin vị thế")
+            
+            return []
         except Exception as e:
-            logging.error(f"Lỗi khi lấy vị thế: {e}")
+            logging.error(f"Lỗi khi lấy vị thế: {e}", exc_info=True)
             return []
     
     def get_trade_history(self, symbol, limit=50):
@@ -217,3 +234,34 @@ class BinanceClientModel:
         except Exception as e:
             logging.error(f"Lỗi khi tính toán số lượng: {e}")
             return None
+    def validate_api_permissions(self):
+        """Kiểm tra quyền của API key"""
+        if not self.is_connected():
+            return False, "Không có kết nối đến Binance API"
+        
+        try:
+            # Kiểm tra quyền thông qua account API
+            account_info = self.client.account()
+            
+            if 'canTrade' not in account_info:
+                return False, "API key không có quyền giao dịch"
+            
+            if not account_info['canTrade']:
+                return False, "API key không được phép giao dịch"
+            
+            # Thử lấy vị thế để kiểm tra quyền truy cập futures
+            positions = self.client.get_position_risk()
+            
+            return True, "API key hợp lệ và có đủ quyền"
+        except ClientError as e:
+            error_code = str(e).split(':')[0] if ':' in str(e) else "Unknown"
+            if "-2015" in error_code:
+                return False, "API key không hợp lệ hoặc đã hết hạn"
+            elif "-2014" in error_code:
+                return False, "API secret không chính xác"
+            elif "-2021" in error_code or "-2022" in error_code:
+                return False, "API key không có quyền truy cập futures"
+            else:
+                return False, f"Lỗi khi kiểm tra API key: {e}"
+        except Exception as e:
+            return False, f"Lỗi không xác định khi kiểm tra API key: {e}"

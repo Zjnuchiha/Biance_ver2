@@ -13,9 +13,14 @@ class TradeModel:
         if not os.path.exists(os.path.dirname(self.trades_file)):
             os.makedirs(os.path.dirname(self.trades_file))
         
-        if not os.path.exists(self.trades_file):
+        try:
+            # Thử đọc file
+            with open(self.trades_file, "r") as f:
+                trades_data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            # Nếu file không tồn tại hoặc trống, tạo mới
             with open(self.trades_file, "w") as f:
-                json.dump({}, f)
+                json.dump({}, f, indent=4)
     
     def get_user_trades(self, username):
         """Lấy lịch sử giao dịch của người dùng"""

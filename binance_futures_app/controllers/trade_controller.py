@@ -222,132 +222,196 @@ class TradeController(QObject):
     def get_binance_trades(self):
         """Lấy lịch sử giao dịch từ Binance API"""
         if not self.binance_client.is_connected():
+            logging.warning("Không thể kết nối đến Binance API - Kiểm tra API key và secret")
             return []
         
         binance_trades = []
         
         try:
+            logging.info("=== Bắt đầu lấy dữ liệu giao dịch từ Binance ===")
+            
             # 1. Lấy vị thế đang mở
-            logging.info("Đang lấy thông tin vị thế...")
-            positions = self.binance_client.get_positions()
-            logging.info(f"Đã nhận {len(positions)} vị thế")
-            # Xử lý positions
-            positions = self.binance_client.get_positions()
-            for position in positions:
-                position_amount = float(position.get('positionAmt', 0))
-                if position_amount == 0:
-                    continue
+            try:
+                logging.info("Đang lấy thông tin vị thế...")
+                positions = self.binance_client.get_positions()
+                logging.info(f"Nhận được {len(positions)} vị thế từ Binance")
                 
-                symbol = position['symbol']
-                entry_price = float(position['entryPrice'])
-                mark_price = float(position.get('markPrice', 0))
-                unrealized_pnl = float(position.get('unRealizedProfit', 0))
-                side = "BUY" if position_amount > 0 else "SELL"
-                position_id = f"POS_{symbol}_{side}"
-                
-                binance_trades.append({
-                    'id': position_id,
-                    'symbol': symbol,
-                    'side': side,
-                    'price': entry_price,
-                    'quantity': abs(position_amount),
-                    'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    'status': "OPEN",
-                    'pnl': unrealized_pnl,
-                    'source': "Binance",
-                    'order_type': "Đang mở"
-                })
+                for position in positions:
+                    # Chỉ xem xét các vị thế có số lượng khác 0
+                    position_amount = float(position.get('positionAmt', 0))
+                    if position_amount == 0:
+                        continue
+                    
+                    symbol = position['symbol']
+                    entry_price = float(position['entryPrice'])
+                    mark_price = float(position.get('markPrice', 0))
+                    unrealized_pnl = float(position.get('unRealizedProfit', 0))
+                    leverage = position.get('leverage', '1')
+                    side = "BUY" if position_amount > 0 else "SELL"
+                    position_id = f"POS_{symbol}_{side}"
+                    
+                    logging.info(f"Xử lý vị thế: {symbol} {side} với PnL: {unrealized_pnl}")
+                    
+                    binance_trades.append({
+                        'id': position_id,
+                        'symbol': symbol,
+                        'side': side,
+                        'price': entry_price,
+                        'quantity': abs(position_amount),
+                        'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'status': "OPEN",
+                        'pnl': unrealized_pnl,
+                        'source': "Binance",
+                        'order_type': "Đang mở"
+                    })
+            except Exception as e:
+                logging.error(f"Lỗi khi lấy vị thế: {e}", exc_info=True)
             
             # 2. Lấy lệnh đang mở
-            logging.info("Đang lấy thông tin lệnh đang mở...")
-            open_orders = self.binance_client.get_open_orders()
-            logging.info(f"Đã nhận {len(open_orders)} lệnh đang mở")
-            
-            # Xử lý open_orders
-            open_orders = self.binance_client.get_open_orders()
-            for order in open_orders:
-                order_id = str(order.get('orderId', ''))
-                symbol = order['symbol']
-                side = order['side']
-                order_type = order['type']
-                price = float(order.get('price', 0))
-                if price == 0 and 'avgPrice' in order:
-                    price = float(order['avgPrice'])
-                qty = float(order.get('origQty', 0))
-                status = order['status']
-                time_str = datetime.datetime.fromtimestamp(int(order['time']) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                logging.info("Đang lấy thông tin lệnh đang mở...")
+                open_orders = self.binance_client.get_open_orders()
+                logging.info(f"Nhận được {len(open_orders)} lệnh đang mở từ Binance")
                 
-                # Kiểm tra loại lệnh để xác định SL/TP
-                if "STOP" in order_type or order_type == "STOP_MARKET":
-                    type_label = "Stop Loss"
-                elif "TAKE_PROFIT" in order_type:
-                    type_label = "Take Profit"
-                elif order_type == "LIMIT":
-                    type_label = "Limit"
-                elif order_type == "MARKET":
-                    type_label = "Market"
-                else:
-                    type_label = order_type
-                
-                binance_trades.append({
-                    'id': order_id,
-                    'symbol': symbol,
-                    'side': side,
-                    'price': price,
-                    'quantity': qty,
-                    'timestamp': time_str,
-                    'status': status,
-                    'pnl': 0,
-                    'source': "Binance",
-                    'order_type': type_label
-                })
+                for order in open_orders:
+                    order_id = str(order.get('orderId', ''))
+                    
+                    # Kiểm tra trùng lặp
+                    duplicate = False
+                    for existing_trade in binance_trades:
+                        if existing_trade['id'] == order_id:
+                            duplicate = True
+                            break
+                    
+                    if duplicate:
+                        continue
+                    
+                    symbol = order['symbol']
+                    side = order['side']
+                    order_type = order['type']
+                    price = float(order.get('price', 0))
+                    if price == 0 and 'avgPrice' in order:
+                        price = float(order['avgPrice'])
+                    qty = float(order.get('origQty', 0))
+                    status = order['status']
+                    time_str = datetime.datetime.fromtimestamp(int(order['time']) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    # Lấy thông tin stop loss / take profit
+                    stop_price = order.get('stopPrice', 0)
+                    stop_loss_percent = ""
+                    take_profit_percent = ""
+                    
+                    # Kiểm tra loại lệnh để xác định SL/TP
+                    if "STOP" in order_type or order_type == "STOP_MARKET":
+                        # Ước tính % stop loss
+                        if stop_price > 0 and price > 0:
+                            if side == "SELL":  # Đây là SL cho vị thế LONG
+                                stop_loss_percent = f"{((price - stop_price) / price * 100):.2f}%"
+                            else:  # Đây là SL cho vị thế SHORT
+                                stop_loss_percent = f"{((stop_price - price) / price * 100):.2f}%"
+                    
+                    elif "TAKE_PROFIT" in order_type:
+                        # Ước tính % take profit
+                        if stop_price > 0 and price > 0:
+                            if side == "SELL":  # Đây là TP cho vị thế LONG
+                                take_profit_percent = f"{((stop_price - price) / price * 100):.2f}%"
+                            else:  # Đây là TP cho vị thế SHORT
+                                take_profit_percent = f"{((price - stop_price) / price * 100):.2f}%"
+                    
+                    # Xác định loại lệnh
+                    type_label = ""
+                    if "STOP" in order_type:
+                        type_label = "Stop Loss"
+                    elif "TAKE_PROFIT" in order_type:
+                        type_label = "Take Profit"
+                    elif order_type == "LIMIT":
+                        type_label = "Limit"
+                    elif order_type == "MARKET":
+                        type_label = "Market"
+                    else:
+                        type_label = order_type
+                    
+                    binance_trades.append({
+                        'id': order_id,
+                        'symbol': symbol,
+                        'side': side,
+                        'price': price,
+                        'quantity': qty,
+                        'timestamp': time_str,
+                        'status': status,
+                        'pnl': 0,
+                        'source': "Binance",
+                        'order_type': type_label,
+                        'stop_loss': stop_loss_percent,
+                        'take_profit': take_profit_percent
+                    })
+            except Exception as e:
+                logging.error(f"Lỗi khi lấy lệnh đang mở: {e}", exc_info=True)
             
             # 3. Lấy lịch sử giao dịch
-            symbol = self.view.symbolComboBox.currentText()
-            logging.info(f"Đang lấy lịch sử giao dịch cho {symbol}...")
-            trade_history = self.binance_client.get_trade_history(symbol)
-            logging.info(f"Đã nhận {len(trade_history)} giao dịch lịch sử")
+            try:
+                # Lấy danh sách các cặp giao dịch phổ biến
+                popular_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "ADAUSDT", "DOGEUSDT", "XRPUSDT", 
+                                "SOLUSDT", "AVAXUSDT", "DOTUSDT", "MATICUSDT", "LINKUSDT"]
+                
+                # Thời gian trong 7 ngày gần đây
+                end_time = int(time.time() * 1000)
+                start_time = end_time - (7 * 24 * 60 * 60 * 1000)  # 7 ngày
+                
+                for symbol in popular_symbols:
+                    logging.info(f"Đang lấy lịch sử giao dịch cho {symbol}...")
+                    try:
+                        trade_history = self.binance_client.get_trade_history(
+                            symbol=symbol,
+                            start_time=start_time,
+                            end_time=end_time,
+                            limit=50
+                        )
+                        
+                        logging.info(f"Nhận được {len(trade_history)} giao dịch lịch sử cho {symbol}")
+                        
+                        for trade in trade_history:
+                            trade_id = str(trade.get('id', ''))
+                            order_id = str(trade.get('orderId', ''))
+                            
+                            # Kiểm tra trùng lặp
+                            duplicate = False
+                            for existing_trade in binance_trades:
+                                if existing_trade['id'] == order_id:
+                                    duplicate = True
+                                    break
+                            
+                            if duplicate:
+                                continue
+                            
+                            symbol = trade['symbol']
+                            side = "BUY" if trade.get('isBuyer', False) else "SELL"
+                            price = float(trade.get('price', 0))
+                            qty = float(trade.get('qty', 0))
+                            realized_pnl = float(trade.get('realizedPnl', 0))
+                            time_str = datetime.datetime.fromtimestamp(int(trade['time']) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                            
+                            binance_trades.append({
+                                'id': order_id,
+                                'symbol': symbol,
+                                'side': side,
+                                'price': price,
+                                'quantity': qty,
+                                'timestamp': time_str,
+                                'status': "FILLED",
+                                'pnl': realized_pnl,
+                                'source': "Binance",
+                                'order_type': "Đã đóng"
+                            })
+                    except Exception as e:
+                        logging.error(f"Lỗi khi lấy lịch sử giao dịch cho {symbol}: {e}")
+                        continue
+            except Exception as e:
+                logging.error(f"Lỗi khi lấy lịch sử giao dịch: {e}", exc_info=True)
             
-            # Xử lý trade_history
-            symbol = self.view.symbolComboBox.currentText()
-            trade_history = self.binance_client.get_trade_history(symbol)
-            
-            for trade in trade_history:
-                trade_id = str(trade.get('id', ''))
-                order_id = str(trade.get('orderId', ''))
-                
-                # Kiểm tra trùng lặp
-                duplicate = False
-                for existing_trade in binance_trades:
-                    if existing_trade['id'] == order_id:
-                        duplicate = True
-                        break
-                
-                if duplicate:
-                    continue
-                
-                symbol = trade['symbol']
-                side = "BUY" if trade['isBuyer'] else "SELL"
-                price = float(trade.get('price', 0))
-                qty = float(trade.get('qty', 0))
-                realized_pnl = float(trade.get('realizedPnl', 0))
-                time_str = datetime.datetime.fromtimestamp(int(trade['time']) / 1000).strftime("%Y-%m-%d %H:%M:%S")
-                
-                binance_trades.append({
-                    'id': order_id,
-                    'symbol': symbol,
-                    'side': side,
-                    'price': price,
-                    'quantity': qty,
-                    'timestamp': time_str,
-                    'status': "FILLED",
-                    'pnl': realized_pnl,
-                    'source': "Binance",
-                    'order_type': "Đã đóng"
-                })
-            
+            logging.info(f"Tổng cộng đã tạo {len(binance_trades)} mục giao dịch từ Binance")
             return binance_trades
             
         except Exception as e:
-            logging.error(f"Lỗi khi lấy dữ liệu từ Binance: {e}")
+            logging.error(f"Lỗi tổng thể khi lấy dữ liệu từ Binance: {e}", exc_info=True)
             return []

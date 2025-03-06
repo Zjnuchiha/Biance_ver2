@@ -1,9 +1,11 @@
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5 import uic
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.config import UI_DIR, ICONS_DIR
 
 class MainView(QMainWindow):
@@ -26,16 +28,18 @@ class MainView(QMainWindow):
         self.userButton.setText(username)
         
         self.setup_ui()
-    
+
     def setup_ui(self):
         """Thiết lập các thành phần UI"""
+        # Tạo label hiển thị trạng thái giao dịch tự động
+        self.auto_trading_status = QLabel("Giao dịch tự động: Đã tắt")
+        self.verticalLayout_2.addWidget(self.auto_trading_status)
         # Thiết lập header cho bảng giao dịch
         self.tradeTable.setColumnCount(12)
         self.tradeTable.setHorizontalHeaderLabels([
             "ID", "Cặp giao dịch", "Loại", "Giá", "Số lượng", "Thời gian", 
             "Trạng thái", "Lời/Lỗ", "Nguồn", "Loại lệnh", "Stop Loss", "Take Profit"
         ])
-        
         # Điều chỉnh hình dạng của header
         header = self.tradeTable.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # ID
