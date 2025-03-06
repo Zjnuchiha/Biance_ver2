@@ -92,13 +92,15 @@ class UserController:
         """Thêm người dùng mới"""
         dialog = QDialog(self.view)
         dialog.setWindowTitle("Thêm người dùng")
-        dialog.setFixedSize(300, 180)
+        dialog.setFixedSize(300, 220)
         
         layout = QFormLayout()
         
         username_input = QLineEdit()
         password_input = QLineEdit()
         password_input.setEchoMode(QLineEdit.Password)
+        confirm_password_input = QLineEdit()
+        confirm_password_input.setEchoMode(QLineEdit.Password)
         
         role_combo = QComboBox()
         role_combo.addItems(["user", "admin"])
@@ -112,6 +114,7 @@ class UserController:
         
         layout.addRow("Tên đăng nhập:", username_input)
         layout.addRow("Mật khẩu:", password_input)
+        layout.addRow("Xác nhận mật khẩu:", confirm_password_input)
         layout.addRow("Vai trò:", role_combo)
         layout.addRow("", buttons)
         
@@ -120,7 +123,20 @@ class UserController:
         def save_new_user():
             new_username = username_input.text()
             new_password = password_input.text()
+            confirm_password = confirm_password_input.text()
             new_role = role_combo.currentText()
+            
+            if not new_username:
+                QMessageBox.warning(dialog, "Lỗi", "Vui lòng nhập tên đăng nhập")
+                return
+                
+            if not new_password:
+                QMessageBox.warning(dialog, "Lỗi", "Vui lòng nhập mật khẩu")
+                return
+                
+            if new_password != confirm_password:
+                QMessageBox.warning(dialog, "Lỗi", "Xác nhận mật khẩu không khớp")
+                return
             
             success, message = self.model.add_user(new_username, new_password, new_role)
             
