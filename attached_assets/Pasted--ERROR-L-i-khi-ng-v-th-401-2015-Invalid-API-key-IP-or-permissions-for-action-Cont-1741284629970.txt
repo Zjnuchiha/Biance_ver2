@@ -1,0 +1,19 @@
+- ERROR - Lỗi khi đóng vị thế: (401, -2015, 'Invalid API-key, IP, or permissions for action', {'Content-Type': 'application/json', 'Content-Length': '69', 'Connection': 'keep-alive', 'Date': 'Thu, 06 Mar 2025 18:05:48 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Tengine', 'x-mbx-used-weight-1m': '-1', 'x-response-time': '1ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 13f1a1e5c68772b2506f66fcc08cf3fc.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'SGN50-P1', 'X-Amz-Cf-Id': 'hiONsCv3yrNDMIv7Ymc3kOPc1IfzM2uSSSLgEIyTKPlfJf3DNkb7YA=='})
+Traceback (most recent call last):
+  File "d:\Python\Ver 2\binance_futures_app\controllers\trade_controller.py", line 457, in close_position
+    result = self.binance_client.client.new_order(
+        symbol=symbol,
+    ...<3 lines>...
+        reduceOnly=True  # Sử dụng reduceOnly thay vì closePosition
+    )
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\um_futures\account.py", line 116, in new_order
+    return self.sign_request("POST", url_path, params)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\api.py", line 83, in sign_request
+    return self.send_request(http_method, url_path, payload, special)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\api.py", line 118, in send_request
+    self._handle_exception(response)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\api.py", line 172, in _handle_exception
+    raise ClientError(status_code, err["code"], err["msg"], response.headers)
