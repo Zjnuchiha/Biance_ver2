@@ -131,8 +131,8 @@ class TradeController(QObject):
         symbol = self.view.symbolComboBox.currentText()
         amount = self.view.amountSpinBox.value()
         leverage = self.view.leverageSpinBox.value()
-        stop_loss = self.view.stopLossSpinBox.value()
-        take_profit = self.view.takeProfitSpinBox.value()
+        stop_loss = self.view.stopLossSpinBox.value()  # Giá trị thực, có thể là 0 (trống)
+        take_profit = self.view.takeProfitSpinBox.value()  # Giá trị thực, có thể là 0 (trống)
 
         try:
             # Tính toán số lượng

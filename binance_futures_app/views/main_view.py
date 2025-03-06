@@ -322,3 +322,17 @@ class MainView(QMainWindow):
                 # Gửi tín hiệu đóng vị thế với các tham số cụ thể
                 self.close_position_signal.emit(str(trade_id), symbol, side)
                 logging.info(f"Emitted close_position_signal for: ID={trade_id}, Symbol={symbol}, Side={side}")
+
+# Spin box cho Stop Loss (giá trị thực, không phải %)
+        self.stopLossSpinBox = QDoubleSpinBox(self)
+        self.stopLossSpinBox.setMaximum(1000000.0)
+        self.stopLossSpinBox.setDecimals(2)
+        self.stopLossSpinBox.setValue(0.0)  # Mặc định để trống
+        self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
+
+        # Spin box cho Take Profit (giá trị thực, không phải %)
+        self.takeProfitSpinBox = QDoubleSpinBox(self)
+        self.takeProfitSpinBox.setMaximum(1000000.0)
+        self.takeProfitSpinBox.setDecimals(2)
+        self.takeProfitSpinBox.setValue(0.0)  # Mặc định để trống
+        self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
