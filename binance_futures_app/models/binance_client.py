@@ -183,8 +183,7 @@ class BinanceClientModel:
             
             # Đặt stop loss nếu cần
             if stop_loss > 0:
-                # Sử dụng giá trị thực thay vì tính theo phần trăm
-                stop_price = stop_loss
+                stop_price = current_price * (1 - stop_loss / 100) if side == "BUY" else current_price * (1 + stop_loss / 100)
                 stop_params = {
                     'symbol': symbol,
                     'side': "SELL" if side == "BUY" else "BUY",
@@ -197,8 +196,7 @@ class BinanceClientModel:
             
             # Đặt take profit nếu cần
             if take_profit > 0:
-                # Sử dụng giá trị thực thay vì tính theo phần trăm
-                take_profit_price = take_profit
+                take_profit_price = current_price * (1 + take_profit / 100) if side == "BUY" else current_price * (1 - take_profit / 100)
                 take_profit_params = {
                     'symbol': symbol,
                     'side': "SELL" if side == "BUY" else "BUY",
