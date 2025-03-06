@@ -200,21 +200,21 @@
                <item row="4" column="0">
                 <widget class="QLabel" name="stopLossLabel">
                  <property name="text">
-                  <string>Stop loss (%):</string>
+                  <string>Stop loss :</string>
                  </property>
                 </widget>
                </item>
                <item row="5" column="0">
                 <widget class="QLabel" name="takeProfitLabel">
                  <property name="text">
-                  <string>Take Profit (%):</string>
+                  <string>Take Profit:</string>
                  </property>
                 </widget>
                </item>
                <item row="5" column="1">
                 <widget class="QDoubleSpinBox" name="takeProfitSpinBox">
                  <property name="minimum">
-                  <double>0.100000000000000</double>
+                  <double>0</double>
                  </property>
                  <property name="maximum">
                   <double>1000.000000000000000</double>
@@ -227,7 +227,7 @@
                <item row="4" column="1">
                 <widget class="QDoubleSpinBox" name="stopLossSpinBox">
                  <property name="minimum">
-                  <double>0.100000000000000</double>
+                  <double>0</double>
                  </property>
                  <property name="maximum">
                   <double>50.000000000000000</double>
