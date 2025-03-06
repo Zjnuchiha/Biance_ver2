@@ -1,8 +1,11 @@
 import time
 import datetime
-import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+from config.logging_config import setup_logger
+
+# Tạo logger cho module này
+logger = setup_logger(__name__)
 
 class AutoTrader(QThread):
     trade_update = pyqtSignal(dict)

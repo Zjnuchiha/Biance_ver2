@@ -4,7 +4,10 @@ from PyQt5.QtGui import QColor
 
 import time
 import datetime
-import logging
+from config.logging_config import setup_logger
+
+# Tạo logger cho module này
+logger = setup_logger(__name__)
 
 from views.main_view import MainView
 from controllers.user_controller import UserController

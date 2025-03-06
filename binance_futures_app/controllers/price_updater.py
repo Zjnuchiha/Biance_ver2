@@ -1,6 +1,9 @@
 import time
 from PyQt5.QtCore import QThread, pyqtSignal
-import logging
+from config.logging_config import setup_logger
+
+# Tạo logger cho module này
+logger = setup_logger(__name__)
 
 class PriceUpdater(QThread):
     price_update = pyqtSignal(str)

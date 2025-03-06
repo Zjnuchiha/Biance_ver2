@@ -7,13 +7,29 @@ from PyQt5.QtGui import QIcon
 from config.config import APP_NAME, SETTINGS_FILE
 from controllers.login_controller import LoginController
 
-# Thiết lập logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='app.log',
-    filemode='a'
+# Thiết lập logging sử dụng RotatingFileHandler
+import logging.handlers
+
+log_dir = 'logs'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+log_file = os.path.join(log_dir, 'app.log')
+
+# Tạo rotating file handler với kích thước tối đa là 5MB và giữ tối đa 5 file log
+log_handler = logging.handlers.RotatingFileHandler(
+    log_file, 
+    maxBytes=5*1024*1024,  # 5MB
+    backupCount=5,
+    encoding='utf-8'
 )
+log_handler.setFormatter(log_formatter)
+
+# Thiết lập root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)  # Chuyển từ DEBUG sang INFO để giảm lượng log
+root_logger.addHandler(log_handler)
 
 def main():
     initialize_data_files()
