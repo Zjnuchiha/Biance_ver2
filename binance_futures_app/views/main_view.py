@@ -169,7 +169,9 @@ class MainView(QMainWindow):
 
             self.tradeTable.setItem(i, 3, QTableWidgetItem(str(trade["price"])))
             self.tradeTable.setItem(i, 4, QTableWidgetItem(str(trade["quantity"])))
-            self.tradeTable.setItem(i, 5, QTableWidgetItem(trade["timestamp"]))
+            # Hiển thị entry_time thay vì timestamp
+            entry_time = trade.get("entry_time", trade.get("timestamp", ""))
+            self.tradeTable.setItem(i, 5, QTableWidgetItem(entry_time))
 
             pnl_item = QTableWidgetItem(f"{trade.get('pnl', 0):.2f}")
             if trade.get("pnl", 0) > 0:
@@ -199,9 +201,9 @@ class MainView(QMainWindow):
             tp_value = trade.get("take_profit", "")
             logging.debug(f"Show order trade with ID {trade.get('id', 'N/A')}, SL: {sl_value}, TP: {tp_value}")
 
-            # Chuyển đổi thành chuỗi và hiển thị với dấu phần trăm
-            sl_item = QTableWidgetItem(f"{sl_value}%" if sl_value else "")
-            tp_item = QTableWidgetItem(f"{tp_value}%" if tp_value else "")
+            # Hiển thị giá trị thực, không thêm dấu phần trăm
+            sl_item = QTableWidgetItem(f"{sl_value}" if sl_value else "")
+            tp_item = QTableWidgetItem(f"{tp_value}" if tp_value else "")
 
             # Thêm màu sắc để dễ nhận biết
             if sl_value:
@@ -320,3 +322,17 @@ class MainView(QMainWindow):
                 # Gửi tín hiệu đóng vị thế với các tham số cụ thể
                 self.close_position_signal.emit(str(trade_id), symbol, side)
                 logging.info(f"Emitted close_position_signal for: ID={trade_id}, Symbol={symbol}, Side={side}")
+
+# Spin box cho Stop Loss (giá trị thực, không phải %)
+        self.stopLossSpinBox = QDoubleSpinBox(self)
+        self.stopLossSpinBox.setMaximum(1000000.0)
+        self.stopLossSpinBox.setDecimals(2)
+        self.stopLossSpinBox.setValue(0.0)  # Mặc định để trống
+        self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
+
+        # Spin box cho Take Profit (giá trị thực, không phải %)
+        self.takeProfitSpinBox = QDoubleSpinBox(self)
+        self.takeProfitSpinBox.setMaximum(1000000.0)
+        self.takeProfitSpinBox.setDecimals(2)
+        self.takeProfitSpinBox.setValue(0.0)  # Mặc định để trống
+        self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống

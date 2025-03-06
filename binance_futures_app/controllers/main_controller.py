@@ -246,7 +246,7 @@ class MainController:
                 all_trades = local_trades
 
             # Hiển thị lên bảng
-            self.view.display_trades(all_trades)
+            self.view.update_trades_table(all_trades)
 
             # Cập nhật lại thời gian làm mới
             self.refresh_timer = time.time()
