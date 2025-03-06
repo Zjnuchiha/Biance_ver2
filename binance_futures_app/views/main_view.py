@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem, QPushButton
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem, QPushButton, QDoubleSpinBox
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWebEngineWidgets import QWebEngineView
