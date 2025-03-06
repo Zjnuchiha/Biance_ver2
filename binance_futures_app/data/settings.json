@@ -1,0 +1,7 @@
+{
+    "theme": "light",
+    "chart_style": "candles",
+    "price_alerts": [],
+    "auto_refresh": true,
+    "refresh_interval": 30000
+}
