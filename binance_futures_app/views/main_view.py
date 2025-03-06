@@ -67,6 +67,9 @@ class MainView(QMainWindow):
         self.stopLossSpinBox.setValue(0.0)  # Mặc định là 0
         self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
         self.stopLossSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
+        
+        # Thêm stopLossSpinBox vào form layout
+        self.formLayout.addRow("Stop Loss:", self.stopLossSpinBox)
 
         # Spin box cho Take Profit (giá trị thực, không phải %)
         self.takeProfitSpinBox = QDoubleSpinBox(self)
@@ -75,6 +78,9 @@ class MainView(QMainWindow):
         self.takeProfitSpinBox.setValue(0.0)  # Mặc định là 0
         self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
         self.takeProfitSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
+        
+        # Thêm takeProfitSpinBox vào form layout
+        self.formLayout.addRow("Take Profit:", self.takeProfitSpinBox)
 
         # Tạo QWebEngineView cho biểu đồ
         self.chart_view = QWebEngineView()
