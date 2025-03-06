@@ -25,10 +25,19 @@ log_handler = logging.handlers.RotatingFileHandler(
 )
 log_handler.setFormatter(log_formatter)
 
-# Thiết lập root logger
+# Thiết lập root logger với rotating file handler
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)  # Chuyển từ DEBUG sang INFO để giảm lượng log
-root_logger.addHandler(log_handler)
+
+# Thay file handler thông thường bằng rotating file handler
+rotating_handler = logging.handlers.RotatingFileHandler(
+    'app.log', 
+    maxBytes=5*1024*1024,  # 5MB
+    backupCount=3,         # Giữ tối đa 3 file backup
+    encoding='utf-8'
+)
+rotating_handler.setFormatter(formatter)
+root_logger.addHandler(rotating_handler)
 
 def main():
     #initialize_data_files() #Removed

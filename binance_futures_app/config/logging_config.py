@@ -4,7 +4,8 @@ Module cấu hình logging cho ứng dụng
 """
 import os
 import logging
-import logging.handlersandlers
+import logging.handlers
+from logging.handlers import RotatingFileHandlerandlers
 
 def setup_logger(name=None, level=logging.INFO):
     """
