@@ -62,7 +62,7 @@ class MainView(QMainWindow):
         self.chart_view = QWebEngineView()
 
         # Cấu hình WebEngineView với kích thước lớn hơn
-        self.chart_view.setMinimumSize(1000, 650)  # Tăng kích thước để hiển thị đầy đủ
+        self.chart_view.setMinimumSize(1100, 750)  # Tăng kích thước để hiển thị đầy đủ
 
         # Bỏ qua lỗi CSP từ Binance
         profile = self.chart_view.page().profile()
