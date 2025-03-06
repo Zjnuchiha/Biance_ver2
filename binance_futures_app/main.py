@@ -28,8 +28,7 @@ log_handler.setFormatter(log_formatter)
 # Thiết lập root logger với rotating file handler
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)  # Chuyển từ DEBUG sang INFO để giảm lượng log
-root_logger.addHandler(log_handler)log_formatter)
-root_logger.addHandler(rotating_handler)
+root_logger.addHandler(log_handler)
 
 def main():
     #initialize_data_files() #Removed
