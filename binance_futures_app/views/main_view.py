@@ -27,8 +27,10 @@ class MainView(QMainWindow):
         except:
             pass
 
-        # Cấu hình tiêu đề
+        # Cấu hình tiêu đề và nút người dùng
         self.userButton.setText(username)
+        # Đảm bảo nút đăng xuất hiển thị
+        self.logoutButton.setVisible(True)
 
         self.setup_ui()
 
