@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 from config.config import DATABASE_PATH
@@ -11,13 +10,13 @@ class DatabaseManager:
     def __init__(self, db_path=DATABASE_PATH):
         self.db_path = db_path
         self._ensure_db_exists()
-        
+
     def _ensure_db_exists(self):
         """Đảm bảo database tồn tại và tạo thư mục chứa nếu cần"""
         db_dir = os.path.dirname(self.db_path)
         if not os.path.exists(db_dir):
             os.makedirs(db_dir)
-        
+
         # Kết nối đến database sẽ tự động tạo file nếu chưa tồn tại
         conn = self.get_connection()
         try:
@@ -31,29 +30,20 @@ class DatabaseManager:
                 api_secret TEXT
             )
             ''')
-            
+
             # Tạo bảng trades nếu chưa tồn tại
             conn.execute('''
             CREATE TABLE IF NOT EXISTS trades (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                symbol TEXT NOT NULL,
-                side TEXT NOT NULL,
-                price REAL NOT NULL,
-                quantity REAL NOT NULL,
-                amount REAL NOT NULL,
-                leverage INTEGER NOT NULL,
-                order_id TEXT,
-                entry_time INTEGER NOT NULL,
-                exit_time INTEGER,
-                exit_price REAL,
-                pnl REAL,
-                status TEXT NOT NULL,
-                note TEXT,
-                FOREIGN KEY (username) REFERENCES users(username)
+                id TEXT,
+                username TEXT,
+                symbol TEXT,
+                side TEXT,
+                timestamp TEXT,
+                source TEXT,
+                PRIMARY KEY (id, username)
             )
             ''')
-            
+
             # Tạo bảng settings nếu chưa tồn tại
             conn.execute('''
             CREATE TABLE IF NOT EXISTS settings (
@@ -64,11 +54,11 @@ class DatabaseManager:
                 FOREIGN KEY (username) REFERENCES users(username)
             )
             ''')
-            
+
             # Kiểm tra xem đã có user admin chưa
             cursor = conn.execute("SELECT COUNT(*) FROM users WHERE username = 'admin'")
             count = cursor.fetchone()[0]
-            
+
             # Nếu chưa có, tạo user admin mặc định
             if count == 0:
                 import hashlib
@@ -77,14 +67,14 @@ class DatabaseManager:
                 INSERT INTO users (username, password, role, api_key, api_secret)
                 VALUES (?, ?, ?, ?, ?)
                 ''', ('admin', admin_pass, 'admin', '', ''))
-            
+
             conn.commit()
         except Exception as e:
             logger.error(f"Error initializing database: {e}")
             conn.rollback()
         finally:
             conn.close()
-    
+
     def get_connection(self):
         """Trả về kết nối đến database"""
         try:
@@ -94,7 +84,7 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Error connecting to database: {e}")
             raise
-    
+
     def execute_query(self, query, params=None):
         """Thực thi truy vấn không trả về dữ liệu"""
         conn = self.get_connection()
@@ -111,7 +101,7 @@ class DatabaseManager:
             return False
         finally:
             conn.close()
-    
+
     def fetch_one(self, query, params=None):
         """Thực thi truy vấn và trả về một bản ghi"""
         conn = self.get_connection()
@@ -127,7 +117,7 @@ class DatabaseManager:
             return None
         finally:
             conn.close()
-    
+
     def fetch_all(self, query, params=None):
         """Thực thi truy vấn và trả về tất cả bản ghi"""
         conn = self.get_connection()

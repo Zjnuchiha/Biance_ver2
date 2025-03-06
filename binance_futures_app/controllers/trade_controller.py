@@ -165,9 +165,17 @@ class TradeController(QObject):
             )
 
             if success:
-                trade_info = result
+                # Chỉ lưu ID và thông tin cơ bản
+                minimal_trade_info = {
+                    'id': result.get('id', str(int(time.time()))),
+                    'symbol': symbol,
+                    'side': side,
+                    'source': 'Manual',
+                    'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                
                 # Lưu vào model
-                self.trade_model.add_trade(self.username, trade_info)
+                self.trade_model.add_trade(self.username, minimal_trade_info)
 
                 # Cập nhật giao diện
                 self.view.show_message(

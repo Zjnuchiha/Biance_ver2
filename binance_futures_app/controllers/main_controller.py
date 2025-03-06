@@ -198,48 +198,61 @@ class MainController:
             self.view.show_message("Giao dịch tự động", "Đã tắt chế độ giao dịch tự động")
 
     def load_trades(self):
-        """Tải dữ liệu giao dịch"""
+        """Tải lịch sử giao dịch - Chỉ lấy ID từ local DB và tải thông tin chi tiết từ Binance"""
         try:
-            # Lấy giao dịch từ model
-            trades = self.trade_model.get_user_trades(self.username)
+            # Lấy thông tin IDs giao dịch từ cơ sở dữ liệu
+            local_trades = self.trade_model.get_trades(self.username)
 
-            # Thêm dữ liệu từ Binance API
-            binance_trades = self.trade_controller.get_binance_trades()
+            # Nạp dữ liệu chi tiết từ Binance
+            all_trades = []
+            if self.binance_client.is_connected():
+                try:
+                    # Lấy tất cả vị thế và giao dịch hiện tại từ Binance 
+                    binance_trades = self.trade_controller.get_binance_trades()
 
-            # Kết hợp hai danh sách
-            all_trades = trades + binance_trades
+                    # Tạo từ điển tra cứu nhanh cho các giao dịch Binance dựa trên ID
+                    binance_trades_dict = {str(trade.get('id')): trade for trade in binance_trades}
 
-            # Tính toán lời lỗ
-            total_profit = 0
-            win_count = 0
+                    # Cập nhật thông tin chi tiết cho từng ID giao dịch local
+                    for local_trade in local_trades:
+                        trade_id = str(local_trade.get('id', ''))
 
-            for trade in all_trades:
-                pnl = trade.get('pnl', 0)
-                total_profit += pnl
-                if pnl > 0:
-                    win_count += 1
+                        # Nếu có thông tin chi tiết từ Binance, sử dụng nó
+                        if trade_id in binance_trades_dict:
+                            # Bổ sung thông tin từ local vào thông tin Binance
+                            binance_trade = binance_trades_dict[trade_id].copy()
+                            # Giữ lại timestamp và source từ local nếu có
+                            if 'timestamp' in local_trade and local_trade['timestamp']:
+                                binance_trade['timestamp'] = local_trade['timestamp']
+                            if 'source' in local_trade and local_trade['source']:
+                                binance_trade['source'] = local_trade['source']
 
-            # Tính tỷ lệ thắng
-            win_rate = 0
-            if len(all_trades) > 0:
-                win_rate = (win_count / len(all_trades)) * 100
+                            all_trades.append(binance_trade)
+                            # Đánh dấu đã sử dụng
+                            del binance_trades_dict[trade_id]
+                        else:
+                            # Nếu không có thông tin chi tiết, dùng thông tin cơ bản từ local
+                            all_trades.append(local_trade)
 
-            # Cập nhật giao diện
-            self.view.update_trades_table(all_trades)
+                    # Thêm các giao dịch từ Binance không có trong local
+                    all_trades.extend(binance_trades_dict.values())
 
-            # Cập nhật thông tin tổng kết
-            current_time = datetime.datetime.now().strftime("%H:%M:%S")
-            self.view.update_summary(total_profit, win_rate, current_time)
+                except Exception as e:
+                    logging.error(f"Lỗi khi tải dữ liệu giao dịch từ Binance: {e}")
+                    # Nếu lỗi, hiển thị dữ liệu local
+                    all_trades = local_trades
+            else:
+                # Không có kết nối Binance, chỉ hiển thị dữ liệu local
+                all_trades = local_trades
 
-            # Cập nhật bộ lọc nếu đang áp dụng
-            filter_text = self.view.filterComboBox.currentText()
-            if filter_text != "Tất cả":
-                self.filter_trades(filter_text)
+            # Hiển thị lên bảng
+            self.view.display_trades(all_trades)
+
+            # Cập nhật lại thời gian làm mới
+            self.refresh_timer = time.time()
 
         except Exception as e:
-            error_msg = f"Lỗi khi tải dữ liệu giao dịch: {e}"
-            logger.error(error_msg)
-            self.view.statusbar.showMessage(error_msg, 5000)
+            logging.error(f"Lỗi khi tải dữ liệu giao dịch: {e}")
 
     def filter_trades(self, filter_text):
         """Lọc bảng giao dịch"""
