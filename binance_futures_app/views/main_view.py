@@ -17,8 +17,8 @@ class MainView(QMainWindow):
         # Nạp file UI trực tiếp
         uic.loadUi(os.path.join(UI_DIR, 'main_window.ui'), self)
         
-        # Thiết lập kích thước tối thiểu
-        self.setMinimumSize(1600, 900)
+        # Thiết lập kích thước tối thiểu lớn hơn
+        self.setMinimumSize(1800, 1000)
         
         # Thiết lập tiêu đề và icon
         self.setWindowTitle(f"Binance Futures Trading - {username}")
@@ -61,9 +61,9 @@ class MainView(QMainWindow):
         # Tạo QWebEngineView cho biểu đồ
         self.chart_view = QWebEngineView()
         
-        # Cấu hình WebEngineView
-        self.chart_view.setMinimumSize(900, 600)  # Đảm bảo kích thước đủ lớn
-        self.chart_view.setZoomFactor(0.9)  # Giảm tỷ lệ zoom để hiển thị đầy đủ
+        # Cấu hình WebEngineView với kích thước lớn hơn
+        self.chart_view.setMinimumSize(1000, 650)  # Tăng kích thước để hiển thị đầy đủ
+        self.chart_view.setZoomFactor(0.85)  # Giảm tỷ lệ zoom để hiển thị đầy đủ
         
         # Bỏ qua lỗi CSP từ Binance
         profile = self.chart_view.page().profile()
