@@ -183,7 +183,7 @@ class BinanceClientModel:
             
             # Đặt stop loss nếu cần
             if stop_loss > 0:
-                # Sử dụng giá trị thực thay vì tính theo phần trăm
+                # Sử dụng giá trị thực (không phải phần trăm)
                 stop_price = stop_loss
                 stop_params = {
                     'symbol': symbol,
@@ -193,11 +193,12 @@ class BinanceClientModel:
                     'closePosition': True
                 }
                 
+                logger.info(f"Setting stop loss at price: {stop_price}")
                 self.client.new_order(**stop_params)
             
             # Đặt take profit nếu cần
             if take_profit > 0:
-                # Sử dụng giá trị thực thay vì tính theo phần trăm
+                # Sử dụng giá trị thực (không phải phần trăm)
                 take_profit_price = take_profit
                 take_profit_params = {
                     'symbol': symbol,
@@ -207,6 +208,7 @@ class BinanceClientModel:
                     'closePosition': True
                 }
                 
+                logger.info(f"Setting take profit at price: {take_profit_price}")
                 self.client.new_order(**take_profit_params)
             
             # Tạo đối tượng kết quả

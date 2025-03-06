@@ -60,6 +60,22 @@ class MainView(QMainWindow):
         header.setSectionResizeMode(10, QHeaderView.ResizeToContents)  # Take Profit
         header.setSectionResizeMode(11, QHeaderView.ResizeToContents)  # Trạng thái
 
+        # Spin box cho Stop Loss (giá trị thực, không phải %)
+        self.stopLossSpinBox = QDoubleSpinBox(self)
+        self.stopLossSpinBox.setMaximum(1000000.0)
+        self.stopLossSpinBox.setDecimals(2)
+        self.stopLossSpinBox.setValue(0.0)  # Mặc định là 0
+        self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
+        self.stopLossSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
+
+        # Spin box cho Take Profit (giá trị thực, không phải %)
+        self.takeProfitSpinBox = QDoubleSpinBox(self)
+        self.takeProfitSpinBox.setMaximum(1000000.0)
+        self.takeProfitSpinBox.setDecimals(2)
+        self.takeProfitSpinBox.setValue(0.0)  # Mặc định là 0
+        self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
+        self.takeProfitSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
+
         # Tạo QWebEngineView cho biểu đồ
         self.chart_view = QWebEngineView()
 
@@ -322,19 +338,3 @@ class MainView(QMainWindow):
                 # Gửi tín hiệu đóng vị thế với các tham số cụ thể
                 self.close_position_signal.emit(str(trade_id), symbol, side)
                 logging.info(f"Emitted close_position_signal for: ID={trade_id}, Symbol={symbol}, Side={side}")
-
-# Spin box cho Stop Loss (giá trị thực, không phải %)
-        self.stopLossSpinBox = QDoubleSpinBox(self)
-        self.stopLossSpinBox.setMaximum(1000000.0)
-        self.stopLossSpinBox.setDecimals(2)
-        self.stopLossSpinBox.setValue(0.0)  # Mặc định là 0
-        self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
-        self.stopLossSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
-
-        # Spin box cho Take Profit (giá trị thực, không phải %)
-        self.takeProfitSpinBox = QDoubleSpinBox(self)
-        self.takeProfitSpinBox.setMaximum(1000000.0)
-        self.takeProfitSpinBox.setDecimals(2)
-        self.takeProfitSpinBox.setValue(0.0)  # Mặc định là 0
-        self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
-        self.takeProfitSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
