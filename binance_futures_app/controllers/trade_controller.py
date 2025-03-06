@@ -106,7 +106,7 @@ class AutoTrader(QThread):
         except Exception as e:
             error_msg = f"Lỗi đặt lệnh (Hệ thống): {e}"
             self.status_update.emit(error_msg)
-            logging.error(error_msg)
+            logger.error(error_msg)
     
     def stop(self):
         self.running = False
