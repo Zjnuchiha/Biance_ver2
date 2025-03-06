@@ -247,9 +247,17 @@ class MainController:
         self.timer.timeout.connect(self.auto_refresh_trades)
         
         # Lấy cài đặt thời gian làm mới từ settings_model
-        refresh_interval = self.settings_model.get_setting("refresh_interval", 30000)
+        # Thời gian làm mới cửa sổ lệnh là 15s
+        refresh_interval = self.settings_model.get_setting("refresh_interval", 15000)
         self.timer.start(refresh_interval)
     
     def auto_refresh_trades(self):
         """Tự động làm mới dữ liệu giao dịch"""
         self.load_trades()
+
+    def setup_controllers(self):
+        """Thiết lập các controllers phụ"""
+        self.trade_controller = TradeController(self.view, self.binance_client, self.trade_model, self.username)
+        # Gán tham chiếu đến main_controller cho trade_controller
+        self.trade_controller.main_controller = self
+        self.price_updater = None

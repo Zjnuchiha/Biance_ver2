@@ -17,7 +17,9 @@ class AutoTrader(QThread):
         self.leverage = leverage
         self.stop_loss = stop_loss
         self.running = True
-        
+        # Kết nối tín hiệu đóng vị thế
+        self.view.close_position_signal.connect(self.close_position)
+
     def run(self):
         while self.running:
             try:
@@ -246,62 +248,94 @@ class TradeController(QObject):
                     entry_price = float(position['entryPrice'])
                     unrealized_pnl = float(position.get('unRealizedProfit', 0))
                     side = "BUY" if position_amount > 0 else "SELL"
+                    
+                    # Tạo ID mặc định
                     position_id = f"POS_{symbol}_{side}"
+                    
+                    # Tính khối lượng giao dịch theo USDT
+                    usdt_amount = abs(position_amount) * entry_price
                     
                     logging.info(f"Processing position: {symbol} {side} with PnL: {unrealized_pnl}")
                     
+                    # Khởi tạo thông tin trade với ID mặc định
                     trade_info = {
-                        'id': position_id,
+                        'id': position_id,  # ID mặc định, sẽ được cập nhật sau
                         'symbol': symbol,
                         'side': side,
                         'price': entry_price,
-                        'quantity': abs(position_amount),
+                        'quantity': round(usdt_amount, 2),  # Số lượng tính theo USDT
                         'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         'status': "OPEN",
                         'pnl': unrealized_pnl,
                         'source': "Binance",
-                        'order_type': "Đang mở"  # Giữ nguyên tiếng Việt ở label hiển thị
+                        'order_type': "Đang mở"
                     }
                     
                     # Tìm lệnh SL/TP cho vị thế này
                     try:
-                        orders = []
-                        try:
-                            orders = self.binance_client.client.get_open_orders(symbol=symbol)
-                        except Exception as e:
-                            logging.warning(f"Cannot get open orders for {symbol}: {e}")
+                        # Sử dụng get_orders() thay vì get_open_orders()
+                        all_orders = self.binance_client.client.get_orders(symbol=symbol)
+                        logging.info(f"Found {len(all_orders)} orders for {symbol}")
                         
-                        for order in orders:
-                            if order.get('closePosition', False):
-                                order_side = order.get('side', '')
-                                order_type = order.get('type', '')
-                                stop_price = float(order.get('stopPrice', 0))
+                        # Lọc ra lệnh đang mở theo chiều ngược với vị thế
+                        active_orders = []
+                        
+                        for order in all_orders:
+                            order_side = order.get('side', '')
+                            is_closing_order = (side == "BUY" and order_side == "SELL") or (side == "SELL" and order_side == "BUY")
+                            
+                            if is_closing_order and order.get('status', '') == 'NEW' and order.get('closePosition', False):
+                                active_orders.append(order)
+                        
+                        logging.info(f"Found {len(active_orders)} active closing orders for {symbol} {side}")
+                        
+                        # Nếu tìm thấy lệnh, sử dụng orderId của lệnh đầu tiên làm ID
+                        if active_orders:
+                            # Lấy orderId từ lệnh đầu tiên
+                            first_order = active_orders[0]
+                            order_id = first_order.get('orderId')
+                            if order_id:
+                                # Ghi đè ID của trade bằng orderId từ Binance
+                                trade_info['id'] = str(order_id)
+                                logging.info(f"Using Binance order ID: {order_id} for position {symbol} {side}")
+                            else:
+                                logging.warning(f"Order ID not found for {symbol} {side} - using default ID")
+                        
+                        # Tìm SL/TP
+                        for order in active_orders:
+                            order_type = order.get('type', '')
+                            
+                            if order_type == "STOP_MARKET":
+                                sl_price = float(order.get('stopPrice', 0))
+                                # Tính % SL
+                                if side == "BUY":  # Long position
+                                    sl_percent = round(((entry_price - sl_price) / entry_price) * 100, 2)
+                                else:  # Short position
+                                    sl_percent = round(((sl_price - entry_price) / entry_price) * 100, 2)
+                                    
+                                # Lưu cả giá thực và phần trăm
+                                trade_info['stop_loss'] = f"{sl_price} ({sl_percent}%)"
+                                logging.info(f"Found Stop Loss for {symbol} {side}: {sl_price} ({sl_percent}%)")
                                 
-                                is_for_position = (side == "BUY" and order_side == "SELL") or (side == "SELL" and order_side == "BUY")
-                                
-                                if is_for_position and stop_price > 0:
-                                    if "STOP" in order_type and "TAKE_PROFIT" not in order_type:
-                                        trade_info['stop_loss'] = stop_price
-                                        logging.debug(f"Found stop loss {stop_price} for {symbol} {side}")
-                                    elif "TAKE_PROFIT" in order_type:
-                                        trade_info['take_profit'] = stop_price
-                                        logging.debug(f"Found take profit {stop_price} for {symbol} {side}")
-                    except Exception as e:
-                        logging.error(f"Error finding SL/TP for {symbol}: {e}")
+                            elif order_type == "TAKE_PROFIT_MARKET":
+                                tp_price = float(order.get('stopPrice', 0))
+                                # Tính % TP
+                                if side == "BUY":  # Long position
+                                    tp_percent = round(((tp_price - entry_price) / entry_price) * 100, 2)
+                                else:  # Short position
+                                    tp_percent = round(((entry_price - tp_price) / entry_price) * 100, 2)
+                                    
+                                # Lưu cả giá thực và phần trăm
+                                trade_info['take_profit'] = f"{tp_price} ({tp_percent}%)"
+                                logging.info(f"Found Take Profit for {symbol} {side}: {tp_price} ({tp_percent}%)")
                     
-                    # HACK: Thêm giá trị SL/TP giả lập để kiểm tra UI
-                    # test_ui = True  # Đặt thành False trong môi trường sản phẩm
-                    # if test_ui:
-                    #     trade_info['stop_loss'] = entry_price * 0.95 if side == "BUY" else entry_price * 1.05
-                    #     trade_info['take_profit'] = entry_price * 1.05 if side == "BUY" else entry_price * 0.95
-                    #     logging.debug(f"Added mock SL/TP for {symbol} {side}")
+                    except Exception as e:
+                        logging.error(f"Error finding SL/TP for {symbol}: {e}", exc_info=True)
                     
                     binance_trades.append(trade_info)
                     
             except Exception as e:
                 logging.error(f"Error getting positions: {e}", exc_info=True)
-            
-            # Bạn có thể bỏ qua việc lấy lệnh đang mở và lịch sử giao dịch nếu chỉ quan tâm đến SL/TP của vị thế
             
             # Log tất cả trade để debug
             for trade in binance_trades:
@@ -313,3 +347,125 @@ class TradeController(QObject):
         except Exception as e:
             logging.error(f"Overall error fetching data from Binance: {e}", exc_info=True)
             return []
+    # Đóng vị thế
+    def close_position(self, trade_id, symbol, side):
+        """Đóng vị thế đang mở"""
+        from PyQt5.QtCore import QTimer
+        
+        logging.info(f"Closing position: ID={trade_id}, Symbol={symbol}, Side={side}")
+        
+        try:
+            if not self.binance_client.is_connected():
+                self.view.show_message("Lỗi", "Không có kết nối Binance", QMessageBox.Warning)
+                return
+            
+            # Đặt lệnh đóng vị thế
+            # Chiều đóng vị thế ngược với chiều của vị thế
+            close_side = "SELL" if side == "BUY" else "BUY"
+            
+            # Đóng vị thế
+            try:
+                # Sử dụng MARKET order với closePosition=True
+                result = self.binance_client.client.new_order(
+                    symbol=symbol,
+                    side=close_side,
+                    type="MARKET",
+                    closePosition=True
+                )
+                
+                self.view.show_message(
+                    "Thành công", 
+                    f"Đã đóng vị thế {symbol} ({side}) thành công\n"
+                    f"Order ID: {result.get('orderId', 'N/A')}"
+                )
+                
+                # Vô hiệu hóa nút đóng vị thế ngay lập tức để tránh nhấn nhiều lần
+                self.disable_close_button(trade_id)
+                
+                # Cập nhật lại danh sách giao dịch ngay lập tức
+                self.view.statusbar.showMessage("Đang cập nhật danh sách giao dịch...", 2000)
+                
+                # Cập nhật ngay lập tức, không chờ đợi 30s
+                QTimer.singleShot(2000, self.force_refresh_trades)
+                
+            except Exception as e:
+                logging.error(f"Error closing position: {e}", exc_info=True)
+                self.view.show_message("Lỗi", f"Không thể đóng vị thế: {e}", QMessageBox.Warning)
+                
+        except Exception as e:
+            logging.error(f"Error in close_position: {e}", exc_info=True)
+            self.view.show_message("Lỗi", f"Lỗi xử lý: {e}", QMessageBox.Warning)
+
+    def disable_close_button(self, trade_id):
+        """Vô hiệu hóa nút đóng vị thế cho giao dịch có ID cụ thể"""
+        try:
+            # Tìm và vô hiệu hóa nút trong bảng giao dịch
+            for row in range(self.view.tradeTable.rowCount()):
+                item = self.view.tradeTable.item(row, 0)  # Cột ID
+                if item and item.text() == str(trade_id):
+                    # Tìm thấy hàng có ID trùng khớp
+                    button = self.view.tradeTable.cellWidget(row, 11)  # Cột Trạng thái/Hành động
+                    if button:
+                        button.setEnabled(False)
+                        button.setText("Đang đóng...")
+                        button.setStyleSheet("background-color: #7f8c8d; color: white;")
+                    break
+        except Exception as e:
+            logging.error(f"Error disabling close button: {e}")
+
+    def force_refresh_trades(self):
+        """Cập nhật lại danh sách giao dịch ngay lập tức"""
+        try:
+            # Gọi hàm load_trades của MainController
+            # Tìm đối tượng MainController
+            if hasattr(self, 'main_controller'):
+                # Nếu có tham chiếu trực tiếp
+                self.main_controller.load_trades()
+            else:
+                # Nếu không có tham chiếu trực tiếp, tìm trong parent widgets
+                from controllers.main_controller import MainController
+                parent = getattr(self, 'parent', None)
+                if parent and callable(parent) and isinstance(parent(), MainController):
+                    parent().load_trades()
+                
+                # Reset bộ đếm thời gian làm mới tự động
+                if hasattr(self.main_controller, 'refresh_timer'):
+                    self.main_controller.refresh_timer = time.time()
+        except Exception as e:
+            logging.error(f"Error forcing trade refresh: {e}")
+
+    def refresh_trades(self):
+        """Cập nhật lại danh sách giao dịch"""
+        # Tham chiếu đến MainController và gọi load_trades
+        # Phương pháp này phụ thuộc vào cấu trúc của ứng dụng
+        try:
+            # Nếu TradeController có tham chiếu đến MainController
+            from controllers.main_controller import MainController
+            if hasattr(self, 'main_controller') and isinstance(self.main_controller, MainController):
+                self.main_controller.load_trades()
+            else:
+                # Tìm MainController trong các đối tượng cha
+                parent = self.view.parent()
+                while parent is not None:
+                    if isinstance(parent, MainController):
+                        parent.load_trades()
+                        break
+                    parent = parent.parent()
+                
+                # Nếu không tìm thấy, thử phương pháp cuối cùng
+                from PyQt5.QtWidgets import QApplication
+                main_window = QApplication.activeWindow()
+                if hasattr(main_window, 'load_trades'):
+                    main_window.load_trades()
+        except Exception as e:
+            logging.error(f"Error refreshing trades: {e}", exc_info=True)
+    def remove_position_from_table(self, trade_id):
+        """Xóa vị thế khỏi bảng hiển thị ngay lập tức"""
+        try:
+            for row in range(self.view.tradeTable.rowCount()):
+                item = self.view.tradeTable.item(row, 0)  # Cột ID
+                if item and item.text() == str(trade_id):
+                    self.view.tradeTable.removeRow(row)
+                    break
+        except Exception as e:
+            logging.error(f"Error removing position from table: {e}")

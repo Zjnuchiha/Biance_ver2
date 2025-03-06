@@ -1,8 +1,9 @@
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QLabel, QMessageBox, QTableWidgetItem, QPushButton
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
 import os
 import logging
 import sys
@@ -10,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.config import UI_DIR, ICONS_DIR
 
 class MainView(QMainWindow):
+    close_position_signal = pyqtSignal(str, str, str)  # trade_id, symbol, side
     def __init__(self, username):
         super().__init__()
         # Nạp file UI trực tiếp
@@ -38,8 +40,8 @@ class MainView(QMainWindow):
         # Thiết lập header cho bảng giao dịch
         self.tradeTable.setColumnCount(12)
         self.tradeTable.setHorizontalHeaderLabels([
-            "ID", "Cặp giao dịch", "Loại", "Giá", "Số lượng", "Thời gian", 
-            "Trạng thái", "Lời/Lỗ", "Nguồn", "Loại lệnh", "Stop Loss", "Take Profit"
+        "ID", "Cặp giao dịch", "Loại", "Giá", "Số lượng", "Thời gian", 
+        "Lời/Lỗ", "Nguồn", "Loại lệnh", "Stop Loss", "Take Profit", "Trạng thái"
         ])
         # Điều chỉnh hình dạng của header
         header = self.tradeTable.horizontalHeader()
@@ -49,12 +51,12 @@ class MainView(QMainWindow):
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Giá
         header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Số lượng
         header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Thời gian
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Trạng thái
-        header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Lời/Lỗ
-        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Nguồn
-        header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Loại lệnh
-        header.setSectionResizeMode(10, QHeaderView.ResizeToContents)  # Stoploss
-        header.setSectionResizeMode(11, QHeaderView.ResizeToContents)  # Takeprofit
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Lời/Lỗ
+        header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Nguồn
+        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Loại lệnh
+        header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Stop Loss
+        header.setSectionResizeMode(10, QHeaderView.ResizeToContents)  # Take Profit
+        header.setSectionResizeMode(11, QHeaderView.ResizeToContents)  # Trạng thái
 
         # Tạo QWebEngineView cho biểu đồ
         self.chart_view = QWebEngineView()
@@ -161,21 +163,20 @@ class MainView(QMainWindow):
             self.tradeTable.setItem(i, 3, QTableWidgetItem(str(trade["price"])))
             self.tradeTable.setItem(i, 4, QTableWidgetItem(str(trade["quantity"])))
             self.tradeTable.setItem(i, 5, QTableWidgetItem(trade["timestamp"]))
-            self.tradeTable.setItem(i, 6, QTableWidgetItem(trade["status"]))
             
             pnl_item = QTableWidgetItem(f"{trade.get('pnl', 0):.2f}")
             if trade.get("pnl", 0) > 0:
                 pnl_item.setForeground(QColor(0, 200, 83))  # Xanh lá
             elif trade.get("pnl", 0) < 0:
                 pnl_item.setForeground(QColor(255, 61, 0))  # Đỏ
-            self.tradeTable.setItem(i, 7, pnl_item)
+            self.tradeTable.setItem(i, 6, pnl_item)
             
             # Nguồn lệnh
             source = trade.get("source", "Ứng dụng")
             source_item = QTableWidgetItem(source)
             source_color = QColor(0, 120, 215) if source == "Ứng dụng" else QColor(245, 158, 11)
             source_item.setForeground(source_color)
-            self.tradeTable.setItem(i, 8, source_item)
+            self.tradeTable.setItem(i, 7, source_item)
             
             # Loại lệnh
             order_type = trade.get("order_type", "Đã đóng" if trade["status"] == "FILLED" else "Đang mở")
@@ -184,16 +185,16 @@ class MainView(QMainWindow):
                 type_item.setForeground(QColor(255, 153, 0))  # Cam
             else:
                 type_item.setForeground(QColor(128, 128, 128))  # Xám
-            self.tradeTable.setItem(i, 9, type_item)
+            self.tradeTable.setItem(i, 8, type_item)
             
             # Stop Loss và Take Profit
             sl_value = trade.get("stop_loss", "")
             tp_value = trade.get("take_profit", "")
             logging.debug(f"Show order trade with ID {trade.get('id', 'N/A')}, SL: {sl_value}, TP: {tp_value}")
 
-            # Chuyển đổi thành chuỗi và hiển thị
-            sl_item = QTableWidgetItem(str(sl_value) if sl_value else "")
-            tp_item = QTableWidgetItem(str(tp_value) if tp_value else "")
+            # Chuyển đổi thành chuỗi và hiển thị với dấu phần trăm
+            sl_item = QTableWidgetItem(f"{sl_value}%" if sl_value else "")
+            tp_item = QTableWidgetItem(f"{tp_value}%" if tp_value else "")
 
             # Thêm màu sắc để dễ nhận biết
             if sl_value:
@@ -201,8 +202,23 @@ class MainView(QMainWindow):
             if tp_value:
                 tp_item.setForeground(QColor(0, 255, 0))  # Xanh lá
 
-            self.tradeTable.setItem(i, 10, sl_item)
-            self.tradeTable.setItem(i, 11, tp_item)
+            self.tradeTable.setItem(i, 9, sl_item)
+            self.tradeTable.setItem(i, 10, tp_item)
+            status = trade.get("status", "")
+        
+            # Nếu là "Đang mở", hiển thị nút đóng vị thế
+            if order_type == "Đang mở":
+                close_button = QPushButton("Đóng vị thế")
+                close_button.setStyleSheet("background-color: #E74C3C; color: white;")
+                # Lưu thông tin trade vào button để sử dụng khi click
+                close_button.setProperty("trade_id", trade["id"])
+                close_button.setProperty("symbol", trade["symbol"])
+                close_button.setProperty("side", trade["side"])
+                close_button.clicked.connect(self.on_close_position_clicked)
+                self.tradeTable.setCellWidget(i, 11, close_button)
+            else:
+                status_item = QTableWidgetItem(status)
+                self.tradeTable.setItem(i, 11, status_item)
     
     def update_summary(self, total_profit, win_rate, update_time):
         """Cập nhật thông tin tổng kết"""
@@ -223,26 +239,26 @@ class MainView(QMainWindow):
             show_row = True
             
             if filter_text == "Đang mở":
-                # Kiểm tra cột "Loại lệnh" (cột 9)
-                type_item = self.tradeTable.item(row, 9)
+                # Kiểm tra cột "Loại lệnh" (cột 8)
+                type_item = self.tradeTable.item(row, 8)
                 if type_item and type_item.text() != "Đang mở":
                     show_row = False
                     
             elif filter_text == "Đã đóng":
-                # Kiểm tra cột "Loại lệnh" (cột 9)
-                type_item = self.tradeTable.item(row, 9)
+                # Kiểm tra cột "Loại lệnh" (cột 8)
+                type_item = self.tradeTable.item(row, 8)
                 if type_item and type_item.text() != "Đã đóng":
                     show_row = False
                     
             elif filter_text == "Ứng dụng":
-                # Kiểm tra cột "Nguồn" (cột 8)
-                source_item = self.tradeTable.item(row, 8)
+                # Kiểm tra cột "Nguồn" (cột 7)
+                source_item = self.tradeTable.item(row, 7)
                 if source_item and source_item.text() != "Ứng dụng":
                     show_row = False
                     
             elif filter_text == "Binance":
-                # Kiểm tra cột "Nguồn" (cột 8)
-                source_item = self.tradeTable.item(row, 8)
+                # Kiểm tra cột "Nguồn" (cột 7)
+                source_item = self.tradeTable.item(row, 7)
                 if source_item and source_item.text() != "Binance":
                     show_row = False
             
@@ -269,3 +285,20 @@ class MainView(QMainWindow):
         )
         
         return reply == QMessageBox.Yes
+    def on_close_position_clicked(self):
+        """Xử lý khi nút đóng vị thế được nhấn"""
+        button = self.sender()
+        if button:
+            trade_id = button.property("trade_id")
+            symbol = button.property("symbol")
+            side = button.property("side")
+            
+            # Hiển thị dialog xác nhận
+            confirm = self.confirm_dialog(
+                'Xác nhận đóng vị thế', 
+                f'Bạn có chắc chắn muốn đóng vị thế {symbol} ({side}) không?'
+            )
+            
+            if confirm:
+                # Gửi tín hiệu đóng vị thế (sẽ được kết nối với controller)
+                self.close_position_signal.emit(trade_id, symbol, side)
