@@ -265,7 +265,8 @@ class MainController:
 
         # Lấy cài đặt thời gian làm mới từ settings_model
         # Thời gian làm mới cửa sổ lệnh là 15s
-        refresh_interval = self.settings_model.get_setting("refresh_interval", 15000)
+        user_settings = self.settings_model.get_user_settings(self.username)
+        refresh_interval = user_settings.get("refresh_interval", 15000)
         self.timer.start(refresh_interval)
 
     def auto_refresh_trades(self):
