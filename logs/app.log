@@ -1,0 +1,54 @@
+2025-03-07 00:48:39,166 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: does not exist
+2025-03-07 00:48:39,167 - controllers.main_controller - WARNING - Connection failed to Binance API
+2025-03-07 00:52:20,534 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: does not exist
+2025-03-07 00:52:20,535 - controllers.main_controller - WARNING - Connection failed to Binance API
+2025-03-07 01:05:01,835 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: does not exist
+2025-03-07 01:05:01,836 - controllers.main_controller - WARNING - Connection failed to Binance API
+2025-03-07 01:05:38,275 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 01:05:38,681 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 01:05:38,691 - controllers.trade_controller - INFO - === Starting to fetch trading data from Binance ===
+2025-03-07 01:05:38,691 - controllers.trade_controller - INFO - Fetching position information...
+2025-03-07 01:05:38,691 - root - INFO - Calling API to get positions...
+2025-03-07 01:05:38,879 - root - INFO - Received 1 positions from API
+2025-03-07 01:05:39,044 - controllers.trade_controller - INFO - Received 1 positions from Binance
+2025-03-07 01:05:39,044 - controllers.trade_controller - INFO - Found active position: BTCUSDT SELL with amount -0.002
+2025-03-07 01:05:39,232 - controllers.trade_controller - INFO - Fetched 30 recent trades for BTCUSDT
+2025-03-07 01:05:39,232 - controllers.trade_controller - INFO - Found orderID 610971779845 for BTCUSDT SELL
+2025-03-07 01:05:39,233 - controllers.trade_controller - ERROR - Error finding SL/TP for BTCUSDT: orderId is mandatory, but received empty.
+2025-03-07 01:05:39,235 - controllers.trade_controller - INFO - Total of 1 trades fetched from Binance
+2025-03-07 01:05:47,353 - root - INFO - Close position button clicked for: ID=610971779845, Symbol=BTCUSDT, Side=SELL
+2025-03-07 01:05:48,272 - controllers.trade_controller - INFO - Closing position: ID=610971779845, Symbol=BTCUSDT, Side=SELL
+2025-03-07 01:05:48,272 - root - INFO - Calling API to get positions...
+2025-03-07 01:05:48,433 - root - INFO - Received 1 positions from API
+2025-03-07 01:05:48,590 - controllers.trade_controller - INFO - Closing position: Symbol=BTCUSDT, Side=BUY, Quantity=0.002
+2025-03-07 01:05:48,753 - controllers.trade_controller - ERROR - Lỗi khi đóng vị thế: (401, -2015, 'Invalid API-key, IP, or permissions for action', {'Content-Type': 'application/json', 'Content-Length': '69', 'Connection': 'keep-alive', 'Date': 'Thu, 06 Mar 2025 18:05:48 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Tengine', 'x-mbx-used-weight-1m': '-1', 'x-response-time': '1ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 13f1a1e5c68772b2506f66fcc08cf3fc.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'SGN50-P1', 'X-Amz-Cf-Id': 'hiONsCv3yrNDMIv7Ymc3kOPc1IfzM2uSSSLgEIyTKPlfJf3DNkb7YA=='})
+Traceback (most recent call last):
+  File "d:\Python\Ver 2\binance_futures_app\controllers\trade_controller.py", line 457, in close_position
+    result = self.binance_client.client.new_order(
+        symbol=symbol,
+    ...<3 lines>...
+        reduceOnly=True  # Sử dụng reduceOnly thay vì closePosition
+    )
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\um_futures\account.py", line 116, in new_order
+    return self.sign_request("POST", url_path, params)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\api.py", line 83, in sign_request
+    return self.send_request(http_method, url_path, payload, special)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\api.py", line 118, in send_request
+    self._handle_exception(response)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Zjn\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\binance\api.py", line 172, in _handle_exception
+    raise ClientError(status_code, err["code"], err["msg"], response.headers)
+binance.error.ClientError: (401, -2015, 'Invalid API-key, IP, or permissions for action', {'Content-Type': 'application/json', 'Content-Length': '69', 'Connection': 'keep-alive', 'Date': 'Thu, 06 Mar 2025 18:05:48 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Tengine', 'x-mbx-used-weight-1m': '-1', 'x-response-time': '1ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 13f1a1e5c68772b2506f66fcc08cf3fc.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'SGN50-P1', 'X-Amz-Cf-Id': 'hiONsCv3yrNDMIv7Ymc3kOPc1IfzM2uSSSLgEIyTKPlfJf3DNkb7YA=='})
+2025-03-07 01:05:53,681 - controllers.trade_controller - INFO - === Starting to fetch trading data from Binance ===
+2025-03-07 01:05:53,681 - controllers.trade_controller - INFO - Fetching position information...
+2025-03-07 01:05:53,681 - root - INFO - Calling API to get positions...
+2025-03-07 01:05:53,844 - root - INFO - Received 1 positions from API
+2025-03-07 01:05:54,003 - controllers.trade_controller - INFO - Received 1 positions from Binance
+2025-03-07 01:05:54,003 - controllers.trade_controller - INFO - Found active position: BTCUSDT SELL with amount -0.002
+2025-03-07 01:05:54,170 - controllers.trade_controller - INFO - Fetched 30 recent trades for BTCUSDT
+2025-03-07 01:05:54,170 - controllers.trade_controller - INFO - Found orderID 610971779845 for BTCUSDT SELL
+2025-03-07 01:05:54,170 - controllers.trade_controller - ERROR - Error finding SL/TP for BTCUSDT: orderId is mandatory, but received empty.
+2025-03-07 01:05:54,170 - controllers.trade_controller - INFO - Total of 1 trades fetched from Binance
+2025-03-07 01:06:06,098 - root - INFO - Emitted close_position_signal for: ID=610971779845, Symbol=BTCUSDT, Side=SELL

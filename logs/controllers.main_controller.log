@@ -1,0 +1,8 @@
+2025-03-07 00:48:39,166 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: does not exist
+2025-03-07 00:48:39,167 - controllers.main_controller - WARNING - Connection failed to Binance API
+2025-03-07 00:52:20,534 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: does not exist
+2025-03-07 00:52:20,535 - controllers.main_controller - WARNING - Connection failed to Binance API
+2025-03-07 01:05:01,835 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: does not exist
+2025-03-07 01:05:01,836 - controllers.main_controller - WARNING - Connection failed to Binance API
+2025-03-07 01:05:38,275 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 01:05:38,681 - controllers.main_controller - INFO - Successfully connected to Binance API
