@@ -94,4 +94,4 @@ if __name__ == "__main__":
         sys.exit(exit_code)
     except Exception as e:
         logging.critical(f"Lỗi không xử lý được: {e}", exc_info=True)
-        print(f"Đã xảy ra lỗi: {e}")
+        print(f"Đã xảy ra lỗi: {e}")    

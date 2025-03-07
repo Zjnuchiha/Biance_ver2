@@ -241,190 +241,153 @@ class TradeController(QObject):
         if not self.binance_client.is_connected():
             logger.warning("Cannot connect to Binance API - Check API key and secret")
             return []
-
+        
         binance_trades = []
-
+        
         try:
             logger.info("=== Starting to fetch trading data from Binance ===")
-
+            
             # 1. Lấy vị thế đang mở
             try:
                 logger.info("Fetching position information...")
                 positions = self.binance_client.get_positions()
                 logger.info(f"Received {len(positions)} positions from Binance")
-
-                # Tập hợp các symbol cần lấy thông tin giao dịch
-                symbols_to_fetch = set()
-                active_positions = {}
-
-                # 1. Lọc các vị thế đang mở (positionAmt ≠ 0)
+                
                 for position in positions:
+                    # Chỉ xem xét các vị thế có số lượng khác 0
                     position_amount = float(position.get('positionAmt', 0))
                     if position_amount == 0:
                         continue
-
+                    
                     symbol = position['symbol']
-                    symbols_to_fetch.add(symbol)
+                    entry_price = float(position['entryPrice'])
+                    unrealized_pnl = float(position.get('unRealizedProfit', 0))
                     side = "BUY" if position_amount > 0 else "SELL"
-
-                    # Lưu thông tin vị thế
-                    if symbol not in active_positions:
-                        active_positions[symbol] = []
-
-                    active_positions[symbol].append({
+                    
+                    # Sử dụng ID mặc định trước (sẽ được cập nhật nếu tìm thấy lệnh)
+                    position_id = f"POS_{symbol}_{side}"
+                    
+                    logger.info(f"Processing position: {symbol} {side} with PnL: {unrealized_pnl}")
+                    
+                    trade_info = {
+                        'id': position_id,
                         'symbol': symbol,
                         'side': side,
-                        'entry_price': float(position['entryPrice']),
-                        'position_amount': position_amount,
-                        'unrealized_pnl': float(position.get('unRealizedProfit', 0)),
-                        'leverage': float(position.get('leverage', 1))
-                    })
-
-                    logger.info(f"Found active position: {symbol} {side} with amount {position_amount}")
-
-                # 2. Lấy lịch sử giao dịch cho từng symbol
-                for symbol in symbols_to_fetch:
+                        'price': entry_price,
+                        'quantity': abs(position_amount),
+                        'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'status': "OPEN",
+                        'pnl': unrealized_pnl,
+                        'source': "Binance",
+                        'order_type': "Đang mở"
+                    }
+                    
+                    # Tìm lệnh SL/TP cho vị thế này
                     try:
-                        # Lấy thông tin giao dịch gần nhất (tối đa 30 giao dịch)
-                        trades = self.binance_client.client.get_account_trades(symbol=symbol, limit=30)
-                        logger.info(f"Fetched {len(trades)} recent trades for {symbol}")
-
-                        # 3. Xác định giao dịch cuối cùng cho mỗi vị thế đang mở
-                        for position in active_positions.get(symbol, []):
-                            # Lọc giao dịch theo chiều của vị thế
-                            side = position['side']
-                            matching_trades = []
-
-                            for trade in trades:
-                                trade_side = trade.get('side', '')
-                                if trade_side == side:
-                                    matching_trades.append(trade)
-
-                            # Sắp xếp theo thời gian gần nhất
-                            matching_trades.sort(key=lambda x: int(x.get('time', 0)), reverse=True)
-
-                            if matching_trades:
-                                # Lấy giao dịch gần nhất của vị thế này
-                                latest_trade = matching_trades[0]
-
-                                # Lấy orderID thực tế
-                                order_id = latest_trade.get('orderId')
-                                if not order_id:
-                                    order_id = latest_trade.get('id')  # Sử dụng tradeId nếu không có orderId
-
-                                logger.info(f"Found orderID {order_id} for {symbol} {side}")
-
-                                # Tính khối lượng giao dịch theo USDT
-                                usdt_amount = abs(position['position_amount']) * position['entry_price']
-
-                                # Tạo thông tin trade với ID thực tế
-                                trade_info = {
-                                    'id': str(order_id),
-                                    'symbol': symbol,
-                                    'side': side,
-                                    'price': position['entry_price'],
-                                    'quantity': round(usdt_amount, 2),  # Số lượng tính theo USDT
-                                    'timestamp': datetime.datetime.fromtimestamp(int(latest_trade.get('time', 0))/1000).strftime("%Y-%m-%d %H:%M:%S"),
-                                    'status': "OPEN",
-                                    'pnl': position['unrealized_pnl'],
-                                    'source': "Binance",
-                                    'order_type': "Đang mở"
-                                }
-
-                                # 4. Tìm SL/TP cho vị thế này
-                                try:
-                                    # Kiểm tra xem symbol có hợp lệ không
-                                    if not symbol or len(symbol.strip()) == 0:
-                                        logger.warning(f"Empty symbol when trying to get open orders")
-                                        continue
-                                    
-                                    open_orders = self.binance_client.client.get_open_orders(symbol=symbol)
-
-                                    # Lọc ra lệnh đang mở theo chiều ngược với vị thế
-                                    closing_orders = []
-                                    for order in open_orders:
-                                        # Kiểm tra xem order có orderId không
-                                        if not order.get('orderId'):
-                                            logger.warning(f"Found order without orderId for {symbol}")
-                                            continue
-                                            
-                                        order_side = order.get('side', '')
-                                        is_closing_order = (side == "BUY" and order_side == "SELL") or (side == "SELL" and order_side == "BUY")
-
-                                        if is_closing_order:
-                                            closing_orders.append(order)
-
-                                    # Tìm SL/TP
-                                    for order in closing_orders:
-                                        order_type = order.get('type', '')
-
-                                        if order_type == "STOP_MARKET":
-                                            sl_price = float(order.get('stopPrice', 0))
-                                            # Tính % SL
-                                            if side == "BUY":  # Long position
-                                                sl_percent = round(((position['entry_price'] - sl_price) / position['entry_price']) * 100, 2)
-                                            else:  # Short position
-                                                sl_percent = round(((sl_price - position['entry_price']) / position['entry_price']) * 100, 2)
-
-                                            # Lưu cả giá thực và phần trăm
-                                            trade_info['stop_loss'] = f"{sl_price} ({sl_percent}%)"
-
-                                        elif order_type == "TAKE_PROFIT_MARKET":
-                                            tp_price = float(order.get('stopPrice', 0))
-                                            # Tính % TP
-                                            if side == "BUY":  # Long position
-                                                tp_percent = round(((tp_price - position['entry_price']) / position['entry_price']) * 100, 2)
-                                            else:  # Short position
-                                                tp_percent = round(((position['entry_price'] - tp_price) / position['entry_price']) * 100, 2)
-
-                                            # Lưu cả giá thực và phần trăm
-                                            trade_info['take_profit'] = f"{tp_price} ({tp_percent}%)"
-
-                                except Exception as e:
-                                    logger.error(f"Error finding SL/TP for {symbol}: {e}")
-
-                                binance_trades.append(trade_info)
+                        # Xử lý lỗi "orderId is mandatory"
+                        try:
+                            # Kiểm tra xem phương thức get_orders() có tồn tại không
+                            if hasattr(self.binance_client.client, 'get_orders'):
+                                all_orders = self.binance_client.client.get_orders(symbol=symbol)
+                                logger.info(f"Found {len(all_orders)} orders for {symbol}")
                             else:
-                                # Không tìm thấy giao dịch phù hợp - dùng ID từ Binance position nếu có
-                                if 'positionIdx' in position:
-                                    position_id = f"POS_{position['positionIdx']}_{symbol}"
-                                else:
-                                    position_id = f"POS_{int(time.time())}_{symbol}_{side}"
-
-                                logger.warning(f"No matching trade found for {symbol} {side}. Using fallback ID: {position_id}")
-
-                                # Tính khối lượng giao dịch theo USDT
-                                usdt_amount = abs(position['position_amount']) * position['entry_price']
-
-                                # Tạo thông tin trade với ID backup
-                                trade_info = {
-                                    'id': position_id,
-                                    'symbol': symbol,
-                                    'side': side,
-                                    'price': position['entry_price'],
-                                    'quantity': round(usdt_amount, 2),
-                                    'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    'status': "OPEN",
-                                    'pnl': position['unrealized_pnl'],
-                                    'source': "Binance",
-                                    'order_type': "Đang mở"
-                                }
-
-                                binance_trades.append(trade_info)
-
+                                # Nếu không tồn tại, sử dụng get_open_orders() thay thế
+                                logger.warning("get_orders() method not available, using get_open_orders() instead")
+                                all_orders = self.binance_client.client.get_open_orders(symbol=symbol)
+                                logger.info(f"Found {len(all_orders)} open orders for {symbol}")
+                        except Exception as e:
+                            logger.error(f"Error getting orders for {symbol}: {e}")
+                            # Thử sử dụng get_open_orders() nếu get_orders() gặp lỗi
+                            try:
+                                all_orders = self.binance_client.client.get_open_orders(symbol=symbol)
+                                logger.info(f"Using fallback: Found {len(all_orders)} open orders for {symbol}")
+                            except Exception as e2:
+                                logger.error(f"Error getting open orders for {symbol}: {e2}")
+                                all_orders = []
+                        
+                        # Lọc ra lệnh đang mở theo chiều ngược với vị thế
+                        active_orders = []
+                        
+                        for order in all_orders:
+                            order_side = order.get('side', '')
+                            is_closing_order = (side == "BUY" and order_side == "SELL") or (side == "SELL" and order_side == "BUY")
+                            
+                            # Kiểm tra xem lệnh có closePosition=True không
+                            is_close_position = order.get('closePosition', False)
+                            
+                            # Nếu không có thuộc tính closePosition, kiểm tra type
+                            if not is_close_position:
+                                order_type = order.get('type', '')
+                                is_close_position = order_type in ["STOP_MARKET", "TAKE_PROFIT_MARKET"]
+                            
+                            # Lệnh phải đang mở (status = NEW)
+                            if is_closing_order and order.get('status', '') == 'NEW' and is_close_position:
+                                active_orders.append(order)
+                        
+                        logger.info(f"Found {len(active_orders)} active closing orders for {symbol} {side}")
+                        
+                        # Nếu tìm thấy lệnh, sử dụng orderId của lệnh đầu tiên làm ID
+                        if active_orders:
+                            # Sử dụng orderId của lệnh đầu tiên
+                            order_id = active_orders[0].get('orderId')
+                            if order_id:
+                                trade_info['id'] = str(order_id)
+                                logger.info(f"Using order ID: {order_id} for position {symbol} {side}")
+                        
+                        # Tìm SL/TP
+                        for order in active_orders:
+                            order_type = order.get('type', '')
+                            
+                            if order_type == "STOP_MARKET":
+                                sl_price = float(order.get('stopPrice', 0))
+                                # Tính % SL
+                                if side == "BUY":  # Long position
+                                    sl_percent = round(((entry_price - sl_price) / entry_price) * 100, 2)
+                                else:  # Short position
+                                    sl_percent = round(((sl_price - entry_price) / entry_price) * 100, 2)
+                                    
+                                # Lưu cả giá thực và phần trăm
+                                trade_info['stop_loss'] = f"{sl_price} ({sl_percent}%)"
+                                logger.info(f"Found Stop Loss for {symbol} {side}: {sl_price} ({sl_percent}%)")
+                                
+                            elif order_type == "TAKE_PROFIT_MARKET":
+                                tp_price = float(order.get('stopPrice', 0))
+                                # Tính % TP
+                                if side == "BUY":  # Long position
+                                    tp_percent = round(((tp_price - entry_price) / entry_price) * 100, 2)
+                                else:  # Short position
+                                    tp_percent = round(((entry_price - tp_price) / entry_price) * 100, 2)
+                                    
+                                # Lưu cả giá thực và phần trăm
+                                trade_info['take_profit'] = f"{tp_price} ({tp_percent}%)"
+                                logger.info(f"Found Take Profit for {symbol} {side}: {tp_price} ({tp_percent}%)")
+                    
                     except Exception as e:
-                        logger.error(f"Error fetching trades for {symbol}: {e}")
-
+                        logger.error(f"Error finding SL/TP for {symbol}: {e}")
+                    
+                    binance_trades.append(trade_info)
+                    
             except Exception as e:
                 logger.error(f"Error getting positions: {e}", exc_info=True)
-
+            
+            # Log tất cả trade để debug
+            for trade in binance_trades:
+                logger.debug(f"Final trade: {trade}")
+            
+            logger.info(f"Total of {len(binance_trades)} trades fetched from Binance")
+            return binance_trades
+            
+        except Exception as e:
+            logger.error(f"Overall error fetching data from Binance: {e}", exc_info=True)
+            return []
+            
             # Log tất cả trade để debug
             for trade in binance_trades:
                 logger.debug(f"Final trade data: {trade}")
-
+            
             logger.info(f"Total of {len(binance_trades)} trades fetched from Binance")
             return binance_trades
-
+            
         except Exception as e:
             logger.error(f"Overall error fetching data from Binance: {e}", exc_info=True)
             return []

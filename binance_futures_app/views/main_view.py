@@ -82,9 +82,11 @@ class MainView(QMainWindow):
 
         # Thêm các khung thời gian
         self.timeframeComboBox.addItems(["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"])
-
+        self.stopLossSpinBox.setSpecialValueText("")
+        self.takeProfitSpinBox.setSpecialValueText("")
         # URL cho biểu đồ Binance Futures
         self.binance_futures_chart_url = "https://www.binance.com/en/futures/{symbol}"
+        
 
     def update_price_display(self, price, symbol):
         """Cập nhật hiển thị giá"""
@@ -157,27 +159,30 @@ class MainView(QMainWindow):
             self.tradeTable.insertRow(i)
 
             # Thêm dữ liệu vào bảng
-            self.tradeTable.setItem(i, 0, QTableWidgetItem(str(trade["id"])))
-            self.tradeTable.setItem(i, 1, QTableWidgetItem(trade["symbol"]))
+            self.tradeTable.setItem(i, 0, QTableWidgetItem(str(trade.get("id", ""))))
+            self.tradeTable.setItem(i, 1, QTableWidgetItem(trade.get("symbol", "")))
 
-            side_item = QTableWidgetItem(trade["side"])
-            if trade["side"] == "BUY":
+            side = trade.get("side", "")
+            side_item = QTableWidgetItem(side)
+            if side == "BUY":
                 side_item.setForeground(QColor(0, 200, 83))  # Xanh lá
             else:
                 side_item.setForeground(QColor(255, 61, 0))  # Đỏ
             self.tradeTable.setItem(i, 2, side_item)
 
-            self.tradeTable.setItem(i, 3, QTableWidgetItem(str(trade["price"])))
-            self.tradeTable.setItem(i, 4, QTableWidgetItem(str(trade["quantity"])))
+            self.tradeTable.setItem(i, 3, QTableWidgetItem(str(trade.get("price", ""))))
+            self.tradeTable.setItem(i, 4, QTableWidgetItem(str(trade.get("quantity", ""))))
             # Hiển thị entry_time thay vì timestamp
             entry_time = trade.get("entry_time", trade.get("timestamp", ""))
             self.tradeTable.setItem(i, 5, QTableWidgetItem(entry_time))
 
-            pnl_item = QTableWidgetItem(f"{trade.get('pnl', 0):.2f}")
-            if trade.get("pnl", 0) > 0:
-                pnl_item.setForeground(QColor(0, 200, 83))  # Xanh lá
-            elif trade.get("pnl", 0) < 0:
-                pnl_item.setForeground(QColor(255, 61, 0))  # Đỏ
+            pnl = trade.get("pnl", 0)
+            pnl_item = QTableWidgetItem(f"{pnl:.2f}" if isinstance(pnl, (int, float)) else str(pnl))
+            if isinstance(pnl, (int, float)):
+                if pnl > 0:
+                    pnl_item.setForeground(QColor(0, 200, 83))  # Xanh lá
+                elif pnl < 0:
+                    pnl_item.setForeground(QColor(255, 61, 0))  # Đỏ
             self.tradeTable.setItem(i, 6, pnl_item)
 
             # Nguồn lệnh
@@ -188,22 +193,22 @@ class MainView(QMainWindow):
             self.tradeTable.setItem(i, 7, source_item)
 
             # Loại lệnh
-            order_type = trade.get("order_type", "Đã đóng" if trade["status"] == "FILLED" else "Đang mở")
+            order_type = trade.get("order_type", "Đã đóng" if trade.get("status", "") == "FILLED" else "Đang mở")
             type_item = QTableWidgetItem(order_type)
             if order_type == "Đang mở":
                 type_item.setForeground(QColor(255, 153, 0))  # Cam
             else:
                 type_item.setForeground(QColor(128, 128, 128))  # Xám
             self.tradeTable.setItem(i, 8, type_item)
-
+            
             # Stop Loss và Take Profit
             sl_value = trade.get("stop_loss", "")
             tp_value = trade.get("take_profit", "")
             logging.debug(f"Show order trade with ID {trade.get('id', 'N/A')}, SL: {sl_value}, TP: {tp_value}")
 
-            # Hiển thị giá trị thực, không thêm dấu phần trăm
-            sl_item = QTableWidgetItem(f"{sl_value}" if sl_value else "")
-            tp_item = QTableWidgetItem(f"{tp_value}" if tp_value else "")
+            # Chuyển đổi sang chuỗi nếu cần (phòng trường hợp dữ liệu là số hoặc kiểu khác)
+            sl_item = QTableWidgetItem(str(sl_value) if sl_value else "")
+            tp_item = QTableWidgetItem(str(tp_value) if tp_value else "")
 
             # Thêm màu sắc để dễ nhận biết
             if sl_value:
@@ -211,22 +216,22 @@ class MainView(QMainWindow):
             if tp_value:
                 tp_item.setForeground(QColor(0, 255, 0))  # Xanh lá
 
+            # Kiểm tra chỉ số cột - giả sử chỉ số cột 9 là SL và 10 là TP (chỉ số từ 0)
             self.tradeTable.setItem(i, 9, sl_item)
             self.tradeTable.setItem(i, 10, tp_item)
-            status = trade.get("status", "")
-
-            # Nếu là "Đang mở", hiển thị nút đóng vị thế
+            
+            # Trạng thái/Hành động
             if order_type == "Đang mở":
                 close_button = QPushButton("Đóng vị thế")
                 close_button.setStyleSheet("background-color: #E74C3C; color: white;")
                 # Lưu thông tin trade vào button để sử dụng khi click
-                close_button.setProperty("trade_id", trade["id"])
-                close_button.setProperty("symbol", trade["symbol"])
-                close_button.setProperty("side", trade["side"])
+                close_button.setProperty("trade_id", trade.get("id", ""))
+                close_button.setProperty("symbol", trade.get("symbol", ""))
+                close_button.setProperty("side", side)
                 close_button.clicked.connect(self.on_close_position_clicked)
                 self.tradeTable.setCellWidget(i, 11, close_button)
             else:
-                status_item = QTableWidgetItem(status)
+                status_item = QTableWidgetItem(trade.get("status", ""))
                 self.tradeTable.setItem(i, 11, status_item)
 
     def update_summary(self, total_profit, win_rate, update_time):
@@ -322,19 +327,3 @@ class MainView(QMainWindow):
                 # Gửi tín hiệu đóng vị thế với các tham số cụ thể
                 self.close_position_signal.emit(str(trade_id), symbol, side)
                 logging.info(f"Emitted close_position_signal for: ID={trade_id}, Symbol={symbol}, Side={side}")
-
-        # Spin box cho Stop Loss (giá trị thực, không phải %)
-        self.stopLossSpinBox = QDoubleSpinBox(self)
-        self.stopLossSpinBox.setMaximum(1000000.0)
-        self.stopLossSpinBox.setDecimals(2)
-        self.stopLossSpinBox.setValue(0.0)  # Mặc định là 0
-        self.stopLossSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
-        self.stopLossSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm
-
-        # Spin box cho Take Profit (giá trị thực, không phải %)
-        self.takeProfitSpinBox = QDoubleSpinBox(self)
-        self.takeProfitSpinBox.setMaximum(1000000.0)
-        self.takeProfitSpinBox.setDecimals(2)
-        self.takeProfitSpinBox.setValue(0.0)  # Mặc định là 0
-        self.takeProfitSpinBox.setSpecialValueText("")  # Khi giá trị = 0, hiển thị trống
-        self.takeProfitSpinBox.setSuffix("")  # Xóa ký hiệu phần trăm

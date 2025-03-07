@@ -6,3 +6,45 @@
 2025-03-07 01:05:01,836 - controllers.main_controller - WARNING - Connection failed to Binance API
 2025-03-07 01:05:38,275 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
 2025-03-07 01:05:38,681 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 01:33:13,761 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 01:33:14,068 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 01:49:48,610 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 01:49:48,927 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 01:51:45,546 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 01:51:45,828 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 01:58:10,586 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 01:58:10,881 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:05:51,702 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:05:51,998 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:07:15,115 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:07:15,405 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:10:40,786 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:10:41,093 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:14:28,290 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:14:28,642 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:16:52,236 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:16:52,506 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:17:37,902 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:17:38,130 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:19:57,665 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:19:57,955 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:31:25,771 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:31:26,118 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:33:18,644 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:33:19,198 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:37:22,853 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:37:23,264 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:39:41,202 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:39:41,503 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:44:04,484 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:44:04,772 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:47:55,265 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:47:55,585 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:48:08,772 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:48:09,009 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:48:42,704 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:48:42,907 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:49:26,214 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:49:26,511 - controllers.main_controller - INFO - Successfully connected to Binance API
+2025-03-07 02:50:30,312 - controllers.main_controller - INFO - Initialization BinanceClientModel with API key: *****
+2025-03-07 02:50:30,606 - controllers.main_controller - INFO - Successfully connected to Binance API

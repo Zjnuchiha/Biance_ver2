@@ -6,15 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1600</width>
-    <height>900</height>
+    <width>1800</width>
+    <height>1000</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>1600</width>
-    <height>900</height>
+    <width>1800</width>
+    <height>1000</height>
    </size>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>11</pointsize>
+   </font>
   </property>
   <property name="windowTitle">
    <string>Binance Futures Trading</string>
@@ -26,17 +31,53 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
+      <property name="handleWidth">
+       <number>8</number>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
       <widget class="QWidget" name="topWidget" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>600</height>
+        </size>
+       </property>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QSplitter" name="topSplitter">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
+          <property name="handleWidth">
+           <number>8</number>
+          </property>
+          <property name="childrenCollapsible">
+           <bool>false</bool>
+          </property>
           <widget class="QWidget" name="leftWidget" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>1080</width>
+             <height>0</height>
+            </size>
+           </property>
            <layout class="QVBoxLayout" name="chartContainer"/>
           </widget>
           <widget class="QWidget" name="rightWidget" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>350</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>450</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
              <layout class="QHBoxLayout" name="userLayout">
@@ -55,6 +96,11 @@
               </item>
               <item>
                <widget class="QPushButton" name="userButton">
+                <property name="font">
+                 <font>
+                  <pointsize>11</pointsize>
+                 </font>
+                </property>
                 <property name="text">
                  <string>User</string>
                 </property>
@@ -62,6 +108,11 @@
               </item>
               <item>
                <widget class="QPushButton" name="logoutButton">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
                 <property name="text">
                  <string>Đăng xuất</string>
                 </property>
@@ -73,13 +124,24 @@
              <layout class="QHBoxLayout" name="symbolLayout">
               <item>
                <widget class="QLabel" name="symbolLabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
                 <property name="text">
                  <string>Cặp giao dịch:</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QComboBox" name="symbolComboBox"/>
+               <widget class="QComboBox" name="symbolComboBox">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -89,8 +151,15 @@
                <layout class="QVBoxLayout" name="balanceLayout">
                 <item>
                  <widget class="QLabel" name="balanceLabel">
+                  <property name="font">
+                   <font>
+                    <pointsize>12</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
                   <property name="styleSheet">
-                   <string notr="true">font-weight: bold; font-size: 14px;</string>
+                   <string notr="true">font-weight: bold; font-size: 16px;</string>
                   </property>
                   <property name="text">
                    <string>Số dư:</string>
@@ -108,13 +177,13 @@
                   <property name="font">
                    <font>
                     <family>Arial</family>
-                    <pointsize>14</pointsize>
+                    <pointsize>12</pointsize>
                     <weight>75</weight>
                     <bold>true</bold>
                    </font>
                   </property>
                   <property name="styleSheet">
-                   <string notr="true">background-color: rgba(0, 0, 0, 0.05); border-radius: 5px; padding: 8px; font-size: 14px;</string>
+                   <string notr="true">background-color: rgba(0, 0, 0, 0.05); border-radius: 5px; padding: 8px; font-size: 16px;</string>
                   </property>
                   <property name="text">
                    <string>0.0</string>
@@ -142,26 +211,53 @@
               <layout class="QGridLayout" name="gridLayout">
                <item row="0" column="0">
                 <widget class="QLabel" name="autoTradingLabel">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Giao dịch tự động:</string>
                  </property>
                 </widget>
                </item>
                <item row="0" column="1">
-                <widget class="QCheckBox" name="autoTradingCheckBox"/>
+                <widget class="QCheckBox" name="autoTradingCheckBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
+                </widget>
                </item>
                <item row="1" column="0">
                 <widget class="QLabel" name="timeframeLabel">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Khung thời gian:</string>
                  </property>
                 </widget>
                </item>
                <item row="1" column="1">
-                <widget class="QComboBox" name="timeframeComboBox"/>
+                <widget class="QComboBox" name="timeframeComboBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
+                </widget>
                </item>
                <item row="2" column="0">
                 <widget class="QLabel" name="amountLabel">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Số tiền giao dịch (USDT):</string>
                  </property>
@@ -169,6 +265,11 @@
                </item>
                <item row="2" column="1">
                 <widget class="QDoubleSpinBox" name="amountSpinBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="minimum">
                   <double>10.000000000000000</double>
                  </property>
@@ -182,6 +283,11 @@
                </item>
                <item row="3" column="0">
                 <widget class="QLabel" name="leverageLabel">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Đòn bẩy:</string>
                  </property>
@@ -189,6 +295,11 @@
                </item>
                <item row="3" column="1">
                 <widget class="QSpinBox" name="leverageSpinBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="minimum">
                   <number>1</number>
                  </property>
@@ -199,6 +310,11 @@
                </item>
                <item row="4" column="0">
                 <widget class="QLabel" name="stopLossLabel">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Stop loss :</string>
                  </property>
@@ -206,6 +322,11 @@
                </item>
                <item row="5" column="0">
                 <widget class="QLabel" name="takeProfitLabel">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Take Profit:</string>
                  </property>
@@ -213,27 +334,43 @@
                </item>
                <item row="5" column="1">
                 <widget class="QDoubleSpinBox" name="takeProfitSpinBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="minimum">
                   <double>0</double>
                  </property>
                  <property name="maximum">
-                  <double>1000.000000000000000</double>
+                  <double>999999999.000000000000000</double>
                  </property>
-                <property name="value">
+                 <property name="value">
                   <double>0.000000000000000</double>
+                 </property>
+                 <property name="specialValueText">
+                  <string></string>
                  </property>
                 </widget>
                </item>
                <item row="4" column="1">
                 <widget class="QDoubleSpinBox" name="stopLossSpinBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
                  <property name="minimum">
                   <double>0</double>
                  </property>
                  <property name="maximum">
-                  <double>50.000000000000000</double>
+                  <double>999999999.000000000000000</double>
                  </property>
                  <property name="value">
                   <double>0.000000000000000</double>
+                 </property>
+                 <property name="specialValueText">
+                  <string></string>
                  </property>
                 </widget>
                </item>
@@ -241,8 +378,15 @@
                 <layout class="QHBoxLayout" name="buySellLayout">
                  <item>
                   <widget class="QPushButton" name="buyButton">
+                   <property name="font">
+                    <font>
+                     <pointsize>13</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
                    <property name="styleSheet">
-                    <string notr="true">background-color: #00C853; color: white; font-weight: bold;</string>
+                    <string notr="true">background-color: #00C853; color: white; font-weight: bold; font-size: 14px; padding: 8px;</string>
                    </property>
                    <property name="text">
                     <string>MUA</string>
@@ -251,8 +395,15 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="sellButton">
+                   <property name="font">
+                    <font>
+                     <pointsize>13</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
                    <property name="styleSheet">
-                    <string notr="true">background-color: #FF3D00; color: white; font-weight: bold;</string>
+                    <string notr="true">background-color: #FF3D00; color: white; font-weight: bold; font-size: 14px; padding: 8px;</string>
                    </property>
                    <property name="text">
                     <string>BÁN</string>
@@ -274,7 +425,13 @@
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>400</height>
+         <height>300</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>350</height>
         </size>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -304,7 +461,7 @@
           <property name="font">
            <font>
             <family>Arial</family>
-            <pointsize>12</pointsize>
+            <pointsize>13</pointsize>
             <weight>75</weight>
             <bold>true</bold>
            </font>
@@ -319,8 +476,13 @@
           <property name="minimumSize">
            <size>
             <width>0</width>
-            <height>300</height>
+            <height>210</height>
            </size>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
           </property>
          </widget>
         </item>
@@ -359,7 +521,7 @@
                <property name="font">
                 <font>
                  <family>Arial</family>
-                 <pointsize>12</pointsize>
+                 <pointsize>13</pointsize>
                 </font>
                </property>
                <property name="text">
@@ -372,7 +534,7 @@
                <property name="font">
                 <font>
                  <family>Arial</family>
-                 <pointsize>10</pointsize>
+                 <pointsize>11</pointsize>
                 </font>
                </property>
                <property name="text">
@@ -389,6 +551,11 @@
             <layout class="QHBoxLayout" name="filterLayout">
              <item>
               <widget class="QLabel" name="filterLabel">
+               <property name="font">
+                <font>
+                 <pointsize>11</pointsize>
+                </font>
+               </property>
                <property name="text">
                 <string>Lọc:</string>
                </property>
@@ -399,6 +566,11 @@
              </item>
              <item>
               <widget class="QComboBox" name="filterComboBox">
+               <property name="font">
+                <font>
+                 <pointsize>11</pointsize>
+                </font>
+               </property>
                <property name="maximumSize">
                 <size>
                  <width>150</width>
@@ -448,12 +620,23 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1600</width>
-     <height>21</height>
+     <width>1800</width>
+     <height>27</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

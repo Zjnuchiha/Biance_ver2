@@ -86,10 +86,28 @@ class BinanceClientModel:
                 
                 return all_orders
             else:
-                # Nếu có symbol cụ thể, lấy lệnh cho symbol đó
-                return self.client.get_open_orders(symbol=symbol)
+                # Kiểm tra symbol hợp lệ
+                if not symbol or len(symbol.strip()) == 0:
+                    logger.warning("Empty symbol parameter provided to get_open_orders")
+                    return []
+                    
+                try:
+                    orders = self.client.get_open_orders(symbol=symbol)
+                    
+                    # Lọc và chỉ giữ những order có orderId
+                    valid_orders = []
+                    for order in orders:
+                        if order.get('orderId'):
+                            valid_orders.append(order)
+                        else:
+                            logger.warning(f"Found order without orderId for {symbol}")
+                    
+                    return valid_orders
+                except Exception as e:
+                    logger.error(f"Error getting open orders for {symbol}: {e}")
+                    return []
         except Exception as e:
-            logging.error(f"Error getting open orders: {e}")
+            logger.error(f"Error getting open orders: {e}")
             return []
     
     def get_positions(self):
