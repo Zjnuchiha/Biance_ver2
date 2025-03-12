@@ -117,10 +117,10 @@ class BinanceClientModel:
             return []
         
         try:
-            logging.info("Calling API to get positions...")
+            # logging.info("Calling API to get positions...")
             # Lấy thông tin vị thế
             positions = self.client.get_position_risk()
-            logging.info(f"Received {len(positions)} positions from API")
+            # logging.info(f"Received {len(positions)} positions from API")
             
             # Thử lấy thêm thông tin position stop-loss và position take-profit
             try:

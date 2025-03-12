@@ -25,15 +25,15 @@ class MainController:
         self.user_data = user_data
 
         # Khởi tạo models
-        logger.info(f"Initialization BinanceClientModel with API key: {'*****' if user_data['api_key'] else 'does not exist'}")
+        # logger.info(f"Initialization BinanceClientModel with API key: {'*****' if user_data['api_key'] else 'does not exist'}")
         self.binance_client = BinanceClientModel(user_data["api_key"], user_data["api_secret"])
         self.trade_model = TradeModel()
         self.settings_model = SettingsModel()
 
         # Kiểm tra kết nối
-        if self.binance_client.is_connected():
-            logger.info("Successfully connected to Binance API")
-        else:
+        # if self.binance_client.is_connected():
+        #     logger.info("Successfully connected to Binance API")
+        if not self.binance_client.is_connected(): 
             logger.warning("Connection failed to Binance API")
 
         # Khởi tạo view
@@ -266,7 +266,7 @@ class MainController:
         # Lấy cài đặt thời gian làm mới từ settings_model
         # Thời gian làm mới cửa sổ lệnh là 15s
         user_settings = self.settings_model.get_user_settings(self.username)
-        refresh_interval = user_settings.get("refresh_interval", 15000)
+        refresh_interval = user_settings.get("refresh_interval", 10000)
         self.timer.start(refresh_interval)
 
     def auto_refresh_trades(self):

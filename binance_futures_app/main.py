@@ -4,13 +4,13 @@ import logging
 import json
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
-from config.config import APP_NAME, SETTINGS_FILE
+from config.config import APP_NAME, SETTINGS_FILE, APP_DIR
 from controllers.login_controller import LoginController
 
 # Thiết lập logging sử dụng RotatingFileHandler
 import logging.handlers
 
-log_dir = 'logs'
+log_dir = os.path.join(APP_DIR, 'logs')
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 

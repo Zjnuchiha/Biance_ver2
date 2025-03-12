@@ -245,13 +245,13 @@ class TradeController(QObject):
         binance_trades = []
         
         try:
-            logger.info("=== Starting to fetch trading data from Binance ===")
+            #logger.info("=== Starting to fetch trading data from Binance ===")
             
             # 1. Lấy vị thế đang mở
             try:
-                logger.info("Fetching position information...")
+                #logger.info("Fetching position information...")
                 positions = self.binance_client.get_positions()
-                logger.info(f"Received {len(positions)} positions from Binance")
+                #logger.info(f"Received {len(positions)} positions from Binance")
                 
                 for position in positions:
                     # Chỉ xem xét các vị thế có số lượng khác 0
@@ -267,7 +267,7 @@ class TradeController(QObject):
                     # Sử dụng ID mặc định trước (sẽ được cập nhật nếu tìm thấy lệnh)
                     position_id = f"POS_{symbol}_{side}"
                     
-                    logger.info(f"Processing position: {symbol} {side} with PnL: {unrealized_pnl}")
+                    # logger.info(f"Processing position: {symbol} {side} with PnL: {unrealized_pnl}")
                     
                     trade_info = {
                         'id': position_id,
@@ -289,12 +289,12 @@ class TradeController(QObject):
                             # Kiểm tra xem phương thức get_orders() có tồn tại không
                             if hasattr(self.binance_client.client, 'get_orders'):
                                 all_orders = self.binance_client.client.get_orders(symbol=symbol)
-                                logger.info(f"Found {len(all_orders)} orders for {symbol}")
+                                # logger.info(f"Found {len(all_orders)} orders for {symbol}")
                             else:
                                 # Nếu không tồn tại, sử dụng get_open_orders() thay thế
-                                logger.warning("get_orders() method not available, using get_open_orders() instead")
+                                # logger.warning("get_orders() method not available, using get_open_orders() instead")
                                 all_orders = self.binance_client.client.get_open_orders(symbol=symbol)
-                                logger.info(f"Found {len(all_orders)} open orders for {symbol}")
+                                # logger.info(f"Found {len(all_orders)} open orders for {symbol}")
                         except Exception as e:
                             logger.error(f"Error getting orders for {symbol}: {e}")
                             # Thử sử dụng get_open_orders() nếu get_orders() gặp lỗi
@@ -374,18 +374,7 @@ class TradeController(QObject):
             for trade in binance_trades:
                 logger.debug(f"Final trade: {trade}")
             
-            logger.info(f"Total of {len(binance_trades)} trades fetched from Binance")
-            return binance_trades
-            
-        except Exception as e:
-            logger.error(f"Overall error fetching data from Binance: {e}", exc_info=True)
-            return []
-            
-            # Log tất cả trade để debug
-            for trade in binance_trades:
-                logger.debug(f"Final trade data: {trade}")
-            
-            logger.info(f"Total of {len(binance_trades)} trades fetched from Binance")
+            # logger.info(f"Total of {len(binance_trades)} trades fetched from Binance")
             return binance_trades
             
         except Exception as e:

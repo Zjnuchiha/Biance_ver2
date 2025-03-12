@@ -1,4 +1,3 @@
-
 import os
 import json
 import hashlib
@@ -6,6 +5,7 @@ from config.config import USERS_FILE, TRADES_FILE, SETTINGS_FILE
 from utils.database_manager import DatabaseManager
 from config.logging_config import setup_logger
 
+# Tạo logger cho module này
 logger = setup_logger(__name__)
 
 class DataMigrator:

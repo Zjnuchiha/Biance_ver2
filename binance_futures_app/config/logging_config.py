@@ -1,4 +1,3 @@
-
 """
 Module cấu hình logging cho ứng dụng
 """
@@ -6,6 +5,7 @@ import os
 import logging
 import logging.handlers
 from logging.handlers import RotatingFileHandler
+from config.config import APP_DIR
 
 def setup_logger(name=None, level=logging.INFO):
     """
@@ -23,8 +23,8 @@ def setup_logger(name=None, level=logging.INFO):
     
     # Chỉ thêm handler nếu logger chưa có handler nào
     if not logger.handlers and not logger.parent.handlers:
-        # Đảm bảo thư mục logs tồn tại
-        log_dir = 'logs'
+        # Đảm bảo thư mục logs tồn tại (trong thư mục ứng dụng)
+        log_dir = os.path.join(APP_DIR, 'logs')
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         
