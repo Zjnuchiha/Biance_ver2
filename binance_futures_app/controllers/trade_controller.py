@@ -300,7 +300,7 @@ class TradeController(QObject):
                             # Thử sử dụng get_open_orders() nếu get_orders() gặp lỗi
                             try:
                                 all_orders = self.binance_client.client.get_open_orders(symbol=symbol)
-                                logger.info(f"Using fallback: Found {len(all_orders)} open orders for {symbol}")
+                                #logger.info(f"Using fallback: Found {len(all_orders)} open orders for {symbol}")
                             except Exception as e2:
                                 logger.error(f"Error getting open orders for {symbol}: {e2}")
                                 all_orders = []
@@ -324,7 +324,7 @@ class TradeController(QObject):
                             if is_closing_order and order.get('status', '') == 'NEW' and is_close_position:
                                 active_orders.append(order)
                         
-                        logger.info(f"Found {len(active_orders)} active closing orders for {symbol} {side}")
+                        # logger.info(f"Found {len(active_orders)} active closing orders for {symbol} {side}")
                         
                         # Nếu tìm thấy lệnh, sử dụng orderId của lệnh đầu tiên làm ID
                         if active_orders:
@@ -348,7 +348,7 @@ class TradeController(QObject):
                                     
                                 # Lưu cả giá thực và phần trăm
                                 trade_info['stop_loss'] = f"{sl_price} ({sl_percent}%)"
-                                logger.info(f"Found Stop Loss for {symbol} {side}: {sl_price} ({sl_percent}%)")
+                                # logger.info(f"Found Stop Loss for {symbol} {side}: {sl_price} ({sl_percent}%)")
                                 
                             elif order_type == "TAKE_PROFIT_MARKET":
                                 tp_price = float(order.get('stopPrice', 0))
@@ -360,7 +360,7 @@ class TradeController(QObject):
                                     
                                 # Lưu cả giá thực và phần trăm
                                 trade_info['take_profit'] = f"{tp_price} ({tp_percent}%)"
-                                logger.info(f"Found Take Profit for {symbol} {side}: {tp_price} ({tp_percent}%)")
+                                # logger.info(f"Found Take Profit for {symbol} {side}: {tp_price} ({tp_percent}%)")
                     
                     except Exception as e:
                         logger.error(f"Error finding SL/TP for {symbol}: {e}")
@@ -383,84 +383,88 @@ class TradeController(QObject):
 
     # Đóng vị thế
     def close_position(self, trade_id, symbol, side):
-        """Đóng vị thế đang mở"""
+        """Đóng vị thế đang mở với xử lý lỗi tốt hơn"""
         from PyQt5.QtCore import QTimer
-
+        
         logger.info(f"Closing position: ID={trade_id}, Symbol={symbol}, Side={side}")
-
+        
+        if not self.binance_client.is_connected():
+            self.view.show_message("Lỗi", "Không có kết nối Binance", QMessageBox.Warning)
+            return
+        
         try:
-            if not self.binance_client.is_connected():
-                self.view.show_message("Lỗi", "Không có kết nối Binance", QMessageBox.Warning)
+            # Kiểm tra vị thế trước khi đóng
+            position_exists = False
+            position_amount = 0
+            
+            positions = self.binance_client.get_positions()
+            for position in positions:
+                if position['symbol'] == symbol:
+                    position_amount = float(position.get('positionAmt', 0))
+                    if position_amount != 0:
+                        position_exists = True
+                        break
+            
+            if not position_exists:
+                self.view.show_message("Cảnh báo", f"Không tìm thấy vị thế mở cho {symbol}", QMessageBox.Warning)
+                # Cập nhật lại danh sách giao dịch để phản ánh trạng thái mới nhất
+                QTimer.singleShot(2000, self.force_refresh_trades)
                 return
-
+            
             # Chiều đóng vị thế ngược với chiều của vị thế
             close_side = "SELL" if side == "BUY" else "BUY"
-
-            # Đóng vị thế
+            
+            # Khối lượng để đóng (đảo dấu để đóng vị thế)
+            quantity = abs(position_amount)
+            
             try:
-                # Thay vì sử dụng closePosition=True, chúng ta sẽ lấy vị thế hiện tại và tính toán số lượng chính xác
-                positions = self.binance_client.get_positions()
-
-                # Tìm vị thế cần đóng
-                position_amount = 0
-                for position in positions:
-                    if position['symbol'] == symbol:
-                        position_amount = float(position.get('positionAmt', 0))
-                        break
-
-                if position_amount == 0:
-                    self.view.show_message("Lỗi", f"Không tìm thấy vị thế mở cho {symbol}", QMessageBox.Warning)
-                    return
-
-                # Khối lượng để đóng (đảo dấu để đóng vị thế)
-                quantity = abs(position_amount)
-
-                logger.info(f"Closing position: Symbol={symbol}, Side={close_side}, Quantity={quantity}")
-
-                try:
-                    result = self.binance_client.client.new_order(
-                        symbol=symbol,
-                        side=close_side,
-                        type="MARKET",
-                        quantity=quantity,
-                        reduceOnly=True  # Sử dụng reduceOnly thay vì closePosition
-                    )
-                except ClientError as e:
-                    error_msg = str(e)
-                    if "-2015" in error_msg and "Invalid API-key" in error_msg:
-                        # Kiểm tra lại kết nối API
-                        is_connected, msg = self.binance_client.check_connection()
-                        if not is_connected:
-                            logging.error(f"Lỗi kết nối API: {msg}")
-                            raise Exception(f"Lỗi kết nối API: {msg}")
-                        else:
-                            logging.error(f"Lỗi quyền hạn API: {error_msg}")
-                            raise Exception(f"API key không có quyền đóng vị thế. Hãy kiểm tra cài đặt API key của bạn.")
-                    else:
-                        raise
-
+                # Đóng vị thế
+                result = self.binance_client.client.new_order(
+                    symbol=symbol,
+                    side=close_side,
+                    type="MARKET",
+                    quantity=quantity,
+                    reduceOnly=True
+                )
+                
                 logger.info(f"Close position result: {result}")
-
+                
+                # Hiển thị thông báo thành công
                 self.view.show_message(
                     "Thành công", 
                     f"Đã đóng vị thế {symbol} ({side}) thành công\n"
                     f"Order ID: {result.get('orderId', 'N/A')}"
                 )
-
+                
                 # Vô hiệu hóa nút đóng vị thế
                 self.disable_close_button(trade_id)
-
+                
                 # Cập nhật lại danh sách giao dịch
                 self.view.statusbar.showMessage("Đang cập nhật danh sách giao dịch...", 2000)
-
-                # Cập nhật ngay lập tức
+                
+                # Tạo timer để cập nhật lại danh sách giao dịch sau khi đóng
                 QTimer.singleShot(2000, self.force_refresh_trades)
-
-            except Exception as e:
-                error_msg = f"Lỗi khi đóng vị thế: {e}"
-                logger.error(error_msg, exc_info=True)
-                self.view.show_message("Lỗi", error_msg, QMessageBox.Warning)
-
+                
+            except ClientError as e:
+                error_msg = str(e)
+                error_code = error_msg.split(':')[0] if ':' in error_msg else "Unknown"
+                
+                if "-2015" in error_code and "Invalid API-key" in error_msg:
+                    # Kiểm tra lại kết nối API
+                    is_connected, msg = self.binance_client.check_connection()
+                    if not is_connected:
+                        logger.error(f"Lỗi kết nối API: {msg}")
+                        self.view.show_message("Lỗi", f"Lỗi kết nối API: {msg}", QMessageBox.Critical)
+                    else:
+                        logger.error(f"Lỗi quyền hạn API: {error_msg}")
+                        self.view.show_message("Lỗi", "API key không có quyền đóng vị thế. Hãy kiểm tra cài đặt API key của bạn.", QMessageBox.Critical)
+                elif "-4164" in error_code:  # Order does not exist
+                    self.view.show_message("Thông báo", "Vị thế đã được đóng hoặc không tồn tại.", QMessageBox.Information)
+                    # Cập nhật lại danh sách
+                    QTimer.singleShot(1000, self.force_refresh_trades)
+                else:
+                    self.view.show_message("Lỗi", f"Không thể đóng vị thế: {e}", QMessageBox.Critical)
+                    
         except Exception as e:
             error_msg = f"Lỗi xử lý: {e}"
             logger.error(error_msg, exc_info=True)
