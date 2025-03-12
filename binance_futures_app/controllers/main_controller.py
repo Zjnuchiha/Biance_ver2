@@ -162,40 +162,101 @@ class MainController:
         self.view.update_balance_display(balances, symbol)
 
     def toggle_auto_trading(self, state):
-        """Bật/tắt chế độ giao dịch tự động"""
-        # Bật/tắt các điều khiển
+        """Bật/tắt chế độ giao dịch tự động an toàn"""
+        # Định nghĩa danh sách điều khiển cần quản lý
         controls = [
             self.view.timeframeComboBox,
             self.view.amountSpinBox,
             self.view.leverageSpinBox,
             self.view.stopLossSpinBox,
-            self.view.buyButton,
-            self.view.sellButton,
+            self.view.takeProfitSpinBox,
             self.view.symbolComboBox
         ]
-
-        for control in controls:
-            control.setEnabled(not state)
-
+        
+        # Lưu trữ stylesheet gốc cho các nút nếu chưa có
+        if not hasattr(self, '_original_buy_style'):
+            self._original_buy_style = "background-color: #00C853; color: white; font-weight: bold; font-size: 14px; padding: 8px;"
+        
+        if not hasattr(self, '_original_sell_style'):
+            self._original_sell_style = "background-color: #FF3D00; color: white; font-weight: bold; font-size: 14px; padding: 8px;"
+        
         if state:
-            # Bật giao dịch tự động
+            # === BẬT CHẾ ĐỘ GIAO DỊCH TỰ ĐỘNG ===
             if self.binance_client.is_connected():
+                # Vô hiệu hóa tất cả controls
+                for control in controls:
+                    control.setEnabled(False)
+                    
+                # Xử lý riêng cho nút mua/bán
+                self.view.buyButton.setEnabled(False)
+                self.view.sellButton.setEnabled(False)
+                
+                # Chuyển nút mua/bán sang màu xám
+                self.view.buyButton.setStyleSheet("background-color: #AAAAAA; color: #FFFFFF; font-weight: bold; font-size: 14px; padding: 8px;")
+                self.view.sellButton.setStyleSheet("background-color: #AAAAAA; color: #FFFFFF; font-weight: bold; font-size: 14px; padding: 8px;")
+                
+                # Lấy thông số giao dịch
                 symbol = self.view.symbolComboBox.currentText()
                 timeframe = self.view.timeframeComboBox.currentText()
                 amount = self.view.amountSpinBox.value()
                 leverage = self.view.leverageSpinBox.value()
                 stop_loss = self.view.stopLossSpinBox.value()
-
-                self.trade_controller.start_auto_trading(symbol, timeframe, amount, leverage, stop_loss)
-
-                self.view.show_message("Giao dịch tự động", "Đã bật chế độ giao dịch tự động")
+                
+                try:
+                    # Bắt đầu giao dịch tự động
+                    self.trade_controller.start_auto_trading(symbol, timeframe, amount, leverage, stop_loss)
+                    self.view.show_message("Giao dịch tự động", "Đã bật chế độ giao dịch tự động")
+                except Exception as e:
+                    # Xử lý lỗi khi bật chế độ tự động
+                    logger.error(f"Error starting auto trading: {e}")
+                    self.view.show_message("Lỗi", f"Không thể bật giao dịch tự động: {e}", QMessageBox.Warning)
+                    
+                    # Reset lại checkbox
+                    self.view.autoTradingCheckBox.setChecked(False)
+                    
+                    # Kích hoạt lại tất cả controls
+                    for control in controls:
+                        control.setEnabled(True)
+                        
+                    # Khôi phục nút mua/bán
+                    self.view.buyButton.setEnabled(True)
+                    self.view.sellButton.setEnabled(True)
+                    self.view.buyButton.setStyleSheet(self._original_buy_style)
+                    self.view.sellButton.setStyleSheet(self._original_sell_style)
             else:
+                # Không có kết nối Binance
                 self.view.show_message("Lỗi", "Không có kết nối Binance", QMessageBox.Warning)
                 self.view.autoTradingCheckBox.setChecked(False)
         else:
-            # Tắt giao dịch tự động
-            self.trade_controller.stop_auto_trading()
-            self.view.show_message("Giao dịch tự động", "Đã tắt chế độ giao dịch tự động")
+            # === TẮT CHẾ ĐỘ GIAO DỊCH TỰ ĐỘNG ===
+            try:
+                # Dừng bot giao dịch tự động
+                self.trade_controller.stop_auto_trading()
+                
+                # Kích hoạt lại tất cả controls
+                for control in controls:
+                    control.setEnabled(True)
+                    
+                # Khôi phục nút mua/bán
+                self.view.buyButton.setEnabled(True)
+                self.view.sellButton.setEnabled(True)
+                self.view.buyButton.setStyleSheet(self._original_buy_style)
+                self.view.sellButton.setStyleSheet(self._original_sell_style)
+                
+            except Exception as e:
+                # Xử lý lỗi khi tắt chế độ tự động
+                logger.error(f"Error stopping auto trading: {e}")
+                self.view.show_message("Lỗi", f"Gặp lỗi khi tắt giao dịch tự động: {e}", QMessageBox.Warning)
+                
+                # Vẫn kích hoạt lại tất cả controls
+                for control in controls:
+                    control.setEnabled(True)
+                    
+                # Vẫn khôi phục nút mua/bán
+                self.view.buyButton.setEnabled(True)
+                self.view.sellButton.setEnabled(True)
+                self.view.buyButton.setStyleSheet(self._original_buy_style)
+                self.view.sellButton.setStyleSheet(self._original_sell_style)
 
     def load_trades(self):
         """Tải lịch sử giao dịch - Chỉ lấy ID từ local DB và tải thông tin chi tiết từ Binance"""

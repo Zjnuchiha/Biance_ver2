@@ -79,8 +79,13 @@ class AutoTrader(QThread):
             else:
                 time_sleep = 300
 
-            self.status_update.emit(f"Nghỉ {time_sleep} giây trước lần kiểm tra tiếp theo...")
-            time.sleep(time_sleep)
+            self.status_update.emit(f"Đang giao dịch ở khung {self.timeframe} \n Nghỉ {time_sleep} giây trước lần kiểm tra tiếp theo...")
+            
+            # Nghỉ theo từng bước nhỏ 0.5 giây để có thể thoát sớm
+            sleep_count = 0
+            while self.running and sleep_count < time_sleep * 2:
+                time.sleep(0.5)
+                sleep_count += 1
 
     def execute_trade(self, side, current_price):
         try:
@@ -111,6 +116,7 @@ class AutoTrader(QThread):
             logger.error(error_msg)
 
     def stop(self):
+        logger.info("Stopping AutoTrader thread")
         self.running = False
 
 class TradeController(QObject):
@@ -197,34 +203,66 @@ class TradeController(QObject):
 
     def start_auto_trading(self, symbol, timeframe, amount, leverage, stop_loss):
         """Bắt đầu giao dịch tự động"""
-        if self.auto_trader:
-            self.auto_trader.stop()
-            self.auto_trader.wait()
+        if self.auto_trader and self.auto_trader.isRunning():
+            logger.warning("AutoTrader is already running, stopping it first")
+            self.stop_auto_trading()
+            # Đợi một chút để thread dừng
+            import time
+            time.sleep(0.5)
 
-        self.auto_trader = AutoTrader(
-            self.binance_client,
-            symbol,
-            timeframe,
-            amount,
-            leverage,
-            stop_loss
-        )
-        self.auto_trader.trade_update.connect(self.handle_auto_trade)
-        self.auto_trader.status_update.connect(self.update_auto_trading_status)
-        self.auto_trader.start()
+        try:
+            self.auto_trader = AutoTrader(
+                self.binance_client,
+                symbol,
+                timeframe,
+                amount,
+                leverage,
+                stop_loss
+            )
+            self.auto_trader.trade_update.connect(self.handle_auto_trade)
+            self.auto_trader.status_update.connect(self.update_auto_trading_status)
+            self.auto_trader.start()
 
-        # Cập nhật trạng thái
-        self.view.auto_trading_status.setText(f"Giao dịch tự động: Đã bật - {symbol} - {timeframe}")
+            # Cập nhật trạng thái
+            self.view.auto_trading_status.setText(f"Giao dịch tự động: Đã bật - {symbol} - {timeframe}")
+            logger.info(f"AutoTrader started for {symbol} with timeframe {timeframe}")
+        except Exception as e:
+            logger.error(f"Failed to start AutoTrader: {e}")
+            raise
 
     def stop_auto_trading(self):
-        """Dừng giao dịch tự động"""
+        """Dừng giao dịch tự động an toàn"""
         if self.auto_trader:
+            logger.info("Stopping auto trading...")
             self.auto_trader.stop()
-            self.auto_trader.wait()
-            self.auto_trader = None
-
-        # Cập nhật trạng thái
-        self.view.auto_trading_status.setText("Giao dịch tự động: Đã tắt")
+            
+            # Sử dụng QTimer để tránh chặn UI thread
+            from PyQt5.QtCore import QTimer
+            
+            def check_thread_finished():
+                if not self.auto_trader.isRunning():
+                    logger.info("AutoTrader thread stopped successfully")
+                    self.auto_trader = None
+                    # Cập nhật UI sau khi thread đã dừng hoàn toàn
+                    self.view.auto_trading_status.setText("Giao dịch tự động: Đã tắt")
+                else:
+                    # Nếu thread vẫn chạy sau 5 giây, hiển thị thông báo và thử terminate
+                    if hasattr(self, '_stop_attempts'):
+                        self._stop_attempts = 10 # Số lần thử tối đa (5 giây)
+                        if self._stop_attempts <= 0:
+                            logger.warning("Force terminating AutoTrader thread")
+                            self.auto_trader.terminate()
+                            self.auto_trader = None
+                            self.view.auto_trading_status.setText("Giao dịch tự động: Đã tắt (forced)")
+                            return
+                    
+                    # Kiểm tra lại sau 500ms
+                    QTimer.singleShot(500, check_thread_finished)
+            
+            self._stop_attempts = 10  # Số lần thử tối đa (5 giây)
+            check_thread_finished()
+        else:
+            self.view.auto_trading_status.setText("Giao dịch tự động: Đã tắt")
 
     def handle_auto_trade(self, trade_info):
         """Xử lý giao dịch tự động"""
