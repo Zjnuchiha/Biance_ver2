@@ -467,7 +467,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Lịch sử giao dịch</string>
+           <string>Vị thế đang mở</string>
           </property>
          </widget>
         </item>

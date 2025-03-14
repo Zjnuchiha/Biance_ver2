@@ -31,7 +31,8 @@ class MainView(QMainWindow):
         self.userButton.setText(username)
         # Đảm bảo nút đăng xuất hiển thị
         self.logoutButton.setVisible(True)
-
+        # Đặt giới hạn đòn bẩy tối đa là x125
+        self.leverageSpinBox.setMaximum(125)
         self.setup_ui()
 
     def setup_ui(self):

@@ -419,9 +419,9 @@ class TradeController(QObject):
             logger.error(f"Overall error fetching data from Binance: {e}", exc_info=True)
             return []
 
-    # Đóng vị thế
+    # Đóng vị thế (và cả stoploss/takeprofit)
     def close_position(self, trade_id, symbol, side):
-        """Đóng vị thế đang mở với xử lý lỗi tốt hơn"""
+        """Đóng vị thế đang mở và xử lý lệnh liên quan - phiên bản tối ưu"""
         from PyQt5.QtCore import QTimer
         
         logger.info(f"Closing position: ID={trade_id}, Symbol={symbol}, Side={side}")
@@ -448,24 +448,48 @@ class TradeController(QObject):
                 # Cập nhật lại danh sách giao dịch để phản ánh trạng thái mới nhất
                 QTimer.singleShot(2000, self.force_refresh_trades)
                 return
-            
+                
             # Chiều đóng vị thế ngược với chiều của vị thế
             close_side = "SELL" if side == "BUY" else "BUY"
             
             # Khối lượng để đóng (đảo dấu để đóng vị thế)
             quantity = abs(position_amount)
             
+            # Phương pháp 1: Đóng vị thế sử dụng MARKET_ORDER với reduceOnly=True
             try:
-                # Đóng vị thế
+                # Đóng vị thế trước
                 result = self.binance_client.client.new_order(
                     symbol=symbol,
                     side=close_side,
                     type="MARKET",
                     quantity=quantity,
-                    reduceOnly=True
+                    reduceOnly=True  # Đảm bảo lệnh chỉ đóng vị thế, không mở vị thế mới
                 )
                 
                 logger.info(f"Close position result: {result}")
+                
+                # Phương pháp 2: Sau khi đóng vị thế, thử hủy tất cả lệnh một cách an toàn
+                try:
+                    # Chờ một chút để đảm bảo vị thế đã được đóng
+                    time.sleep(0.5)
+                    
+                    # Sử dụng phương thức đặc biệt từ UMFutures - dành riêng cho Futures
+                    client = self.binance_client.client
+                    
+                    # Cố gắng hủy tất cả lệnh đang mở cho symbol - không sinh lỗi nếu không có lệnh
+                    try:
+                        logger.info(f"Attempting to cancel all open orders for {symbol}")
+                        client.cancel_all_open_orders(symbol=symbol)
+                        logger.info(f"Successfully canceled all open orders for {symbol}")
+                    except Exception as e:
+                        # Kiểm tra loại lỗi - nếu là "No open orders" thì đó không phải lỗi thực sự
+                        error_msg = str(e)
+                        if "orderId is mandatory" not in error_msg:
+                            logger.warning(f"Note when canceling all orders: {e}")
+                
+                except Exception as e:
+                    logger.warning(f"Note: Additional error handling after position close: {e}")
+                    # Không hiển thị lỗi này cho người dùng vì vị thế đã được đóng thành công
                 
                 # Hiển thị thông báo thành công
                 self.view.show_message(
