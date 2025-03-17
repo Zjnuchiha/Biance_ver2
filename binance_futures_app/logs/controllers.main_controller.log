@@ -1,2 +1,0 @@
-2025-03-12 16:02:14,269 - controllers.main_controller - ERROR - Error stopping auto trading: hasattr expected 2 arguments, got 3
-2025-03-12 16:02:49,958 - controllers.main_controller - ERROR - Error stopping auto trading: hasattr expected 2 arguments, got 3

@@ -166,6 +166,7 @@ class MainController:
         # Định nghĩa danh sách điều khiển cần quản lý
         controls = [
             self.view.timeframeComboBox,
+            self.view.tradingMethodComboBox,  # Thêm combobox phương pháp giao dịch
             self.view.amountSpinBox,
             self.view.leverageSpinBox,
             self.view.stopLossSpinBox,
@@ -198,14 +199,15 @@ class MainController:
                 # Lấy thông số giao dịch
                 symbol = self.view.symbolComboBox.currentText()
                 timeframe = self.view.timeframeComboBox.currentText()
+                trading_method = self.view.tradingMethodComboBox.currentText()  # Lấy phương pháp giao dịch
                 amount = self.view.amountSpinBox.value()
                 leverage = self.view.leverageSpinBox.value()
                 stop_loss = self.view.stopLossSpinBox.value()
                 
                 try:
                     # Bắt đầu giao dịch tự động
-                    self.trade_controller.start_auto_trading(symbol, timeframe, amount, leverage, stop_loss)
-                    self.view.show_message("Giao dịch tự động", "Đã bật chế độ giao dịch tự động")
+                    self.trade_controller.start_auto_trading(symbol, timeframe, amount, leverage, stop_loss, trading_method)
+                    self.view.show_message("Giao dịch tự động", f"Đã bật chế độ giao dịch tự động với phương pháp {trading_method}")
                 except Exception as e:
                     # Xử lý lỗi khi bật chế độ tự động
                     logger.error(f"Error starting auto trading: {e}")
