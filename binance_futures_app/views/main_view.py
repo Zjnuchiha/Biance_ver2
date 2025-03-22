@@ -44,7 +44,7 @@ class MainView(QMainWindow):
         self.tradeTable.setColumnCount(12)
         self.tradeTable.setHorizontalHeaderLabels([
         "ID", "Cặp giao dịch", "Loại", "Giá", "Số lượng", "Thời gian", 
-        "Lời/Lỗ", "Nguồn", "Loại lệnh", "Stop Loss", "Take Profit", "Trạng thái"
+        "Lời/Lỗ", "Nguồn", "Đòn bẩy", "Stop Loss", "Take Profit", "Trạng thái"
         ])
         # Điều chỉnh hình dạng của header
         header = self.tradeTable.horizontalHeader()
@@ -56,7 +56,7 @@ class MainView(QMainWindow):
         header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Thời gian
         header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Lời/Lỗ
         header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Nguồn
-        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Loại lệnh
+        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Đòn bẩy
         header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Stop Loss
         header.setSectionResizeMode(10, QHeaderView.ResizeToContents)  # Take Profit
         header.setSectionResizeMode(11, QHeaderView.ResizeToContents)  # Trạng thái
@@ -193,14 +193,10 @@ class MainView(QMainWindow):
             source_item.setForeground(source_color)
             self.tradeTable.setItem(i, 7, source_item)
 
-            # Loại lệnh
-            order_type = trade.get("order_type", "Đã đóng" if trade.get("status", "") == "FILLED" else "Đang mở")
-            type_item = QTableWidgetItem(order_type)
-            if order_type == "Đang mở":
-                type_item.setForeground(QColor(255, 153, 0))  # Cam
-            else:
-                type_item.setForeground(QColor(128, 128, 128))  # Xám
-            self.tradeTable.setItem(i, 8, type_item)
+            # Đòn bẩy 
+            leverage = trade.get("leverage", "")
+            leverage_item = QTableWidgetItem(str(leverage) if leverage else "")
+            self.tradeTable.setItem(i, 8, leverage_item)
             
             # Stop Loss và Take Profit
             sl_value = trade.get("stop_loss", "")
@@ -222,7 +218,8 @@ class MainView(QMainWindow):
             self.tradeTable.setItem(i, 10, tp_item)
             
             # Trạng thái/Hành động
-            if order_type == "Đang mở":
+            status = trade.get("status", "")
+            if status == "OPEN" or status == "NEW":
                 close_button = QPushButton("Đóng vị thế")
                 close_button.setStyleSheet("background-color: #E74C3C; color: white;")
                 # Lưu thông tin trade vào button để sử dụng khi click

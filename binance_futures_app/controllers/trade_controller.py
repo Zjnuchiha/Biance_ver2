@@ -5,199 +5,9 @@ from PyQt5.QtWidgets import QMessageBox
 from config.logging_config import setup_logger
 from binance.error import ClientError
 import logging
-
+from .auto_trader import AutoTrader
 # Tạo logger cho module này
 logger = setup_logger(__name__)
-
-class AutoTrader(QThread):
-    trade_update = pyqtSignal(dict)
-    status_update = pyqtSignal(str)
-
-    def __init__(self, binance_client, symbol, timeframe, amount, leverage, stop_loss, trading_method="Đường Base Line"):
-        super().__init__()
-        self.binance_client = binance_client
-        self.symbol = symbol
-        self.timeframe = timeframe
-        self.amount = amount
-        self.leverage = leverage
-        self.stop_loss = stop_loss
-        self.trading_method = trading_method
-        self.running = True
-
-
-    def run(self):
-        while self.running:
-            try:
-                self.status_update.emit(f"Đang phân tích thị trường với phương pháp {self.trading_method}...")
-
-                # Lấy dữ liệu lịch sử giá với Futures Connector
-                klines_response = self.binance_client.client.klines(
-                    symbol=self.symbol,
-                    interval=self.timeframe,
-                    limit=100  # Tăng số lượng nến để có đủ dữ liệu cho Ichimoku
-                )
-
-                # Phân tích dựa trên phương pháp được chọn
-                if self.trading_method == "Đường Base Line":
-                    signal = self.analyze_with_baseline(klines_response)
-                elif self.trading_method == "Mây Ichimoku":
-                    signal = self.analyze_with_ichimoku(klines_response)
-                else:
-                    # Phương pháp mặc định nếu không xác định
-                    signal = self.analyze_with_baseline(klines_response)
-
-                # Xử lý tín hiệu nếu có
-                if signal == "BUY":
-                    self.status_update.emit(f"Phát hiện tín hiệu MUA từ {self.trading_method}...")
-                    current_price = float(klines_response[-1][4])  # Giá đóng cửa của nến cuối cùng
-                    self.execute_trade("BUY", current_price)
-                elif signal == "SELL":
-                    self.status_update.emit(f"Phát hiện tín hiệu BÁN từ {self.trading_method}...")
-                    current_price = float(klines_response[-1][4])  # Giá đóng cửa của nến cuối cùng
-                    self.execute_trade("SELL", current_price)
-                else:
-                    # Không có tín hiệu rõ ràng
-                    self.status_update.emit("Đang chờ tín hiệu giao dịch...")
-
-            except Exception as e:
-                error_msg = f"Lỗi giao dịch tự động: {e}"
-                self.status_update.emit(error_msg)
-                logger.error(error_msg)
-
-            # Chờ khoảng thời gian trước khi kiểm tra lại
-            time_sleep = 60  # 1 phút
-            if self.timeframe == '1m':
-                time_sleep = 30
-            elif self.timeframe == '5m':
-                time_sleep = 60
-            elif self.timeframe in ['15m', '30m']:
-                time_sleep = 120
-            else:
-                time_sleep = 300
-
-            self.status_update.emit(f"Đang giao dịch ở khung {self.timeframe} với {self.trading_method}\nNghỉ {time_sleep} giây trước lần kiểm tra tiếp theo...")
-            
-            # Nghỉ theo từng bước nhỏ 0.5 giây để có thể thoát sớm
-            sleep_count = 0
-            while self.running and sleep_count < time_sleep * 2:
-                time.sleep(0.5)
-                sleep_count += 1
-
-    def analyze_with_baseline(self, klines_response):
-        """Phương pháp phân tích sử dụng đường Base Line"""
-        # Phân tích kỹ thuật đơn giản (ví dụ: dựa trên SMA)
-        close_prices = [float(k[4]) for k in klines_response]
-        sma_5 = sum(close_prices[-5:]) / 5
-        sma_10 = sum(close_prices[-10:]) / 10
-        sma_20 = sum(close_prices[-20:]) / 20
-
-        current_price = float(close_prices[-1])
-
-        # Cập nhật trạng thái
-        self.status_update.emit(f"Phương pháp Base Line - SMA5: {sma_5:.2f}, SMA10: {sma_10:.2f}, SMA20: {sma_20:.2f}")
-
-        # Chiến lược giao dịch nâng cao
-        # 1. Golden Cross / Death Cross
-        if sma_5 > sma_10 and close_prices[-2] < sma_5 <= close_prices[-1]:
-            # Tín hiệu mua (Golden Cross)
-            return "BUY"
-        elif sma_5 < sma_10 and close_prices[-2] > sma_5 >= close_prices[-1]:
-            # Tín hiệu bán (Death Cross)
-            return "SELL"
-        
-        return None  # Không có tín hiệu
-
-    def analyze_with_ichimoku(self, klines_response):
-        """Phương pháp phân tích sử dụng mây Ichimoku"""
-        # Phân tích kỹ thuật phức tạp hơn với mây Ichimoku
-        # Lấy giá cao, thấp, đóng cửa
-        highs = [float(k[2]) for k in klines_response]
-        lows = [float(k[3]) for k in klines_response]
-        close_prices = [float(k[4]) for k in klines_response]
-        
-        # Tính toán các thành phần của Ichimoku
-        tenkan_sen_period = 9
-        kijun_sen_period = 26
-        senkou_span_b_period = 52
-        
-        # Tenkan-sen (Conversion Line): (highest high + lowest low) / 2 for the past 9 periods
-        tenkan_sen = 0
-        if len(highs) >= tenkan_sen_period:
-            tenkan_sen = (max(highs[-tenkan_sen_period:]) + min(lows[-tenkan_sen_period:])) / 2
-        
-        # Kijun-sen (Base Line): (highest high + lowest low) / 2 for the past 26 periods
-        kijun_sen = 0
-        if len(highs) >= kijun_sen_period:
-            kijun_sen = (max(highs[-kijun_sen_period:]) + min(lows[-kijun_sen_period:])) / 2
-        
-        # Senkou Span A (Leading Span A): (Tenkan-sen + Kijun-sen) / 2 (plotted 26 periods ahead)
-        senkou_span_a = (tenkan_sen + kijun_sen) / 2
-        
-        # Senkou Span B (Leading Span B): (highest high + lowest low) / 2 for the past 52 periods (plotted 26 periods ahead)
-        senkou_span_b = 0
-        if len(highs) >= senkou_span_b_period:
-            senkou_span_b = (max(highs[-senkou_span_b_period:]) + min(lows[-senkou_span_b_period:])) / 2
-        
-        # Chikou Span (Lagging Span): Current closing price plotted 26 periods back
-        # (không cần tính toán vì chúng ta chỉ quan tâm đến vị thế hiện tại)
-        
-        current_price = close_prices[-1]
-        
-        # Cập nhật trạng thái
-        self.status_update.emit(
-            f"Phương pháp Ichimoku - Tenkan: {tenkan_sen:.2f}, Kijun: {kijun_sen:.2f}, "
-            f"Span A: {senkou_span_a:.2f}, Span B: {senkou_span_b:.2f}"
-        )
-        
-        # Tín hiệu mua: 
-        # 1. Giá đóng cửa vượt trên mây (trên cả Span A và Span B)
-        # 2. Tenkan-sen vượt trên Kijun-sen (Cross up)
-        if (current_price > senkou_span_a and current_price > senkou_span_b and 
-            tenkan_sen > kijun_sen and close_prices[-2] <= kijun_sen):
-            return "BUY"
-        
-        # Tín hiệu bán:
-        # 1. Giá đóng cửa vượt dưới mây (dưới cả Span A và Span B)
-        # 2. Tenkan-sen vượt dưới Kijun-sen (Cross down)
-        if (current_price < senkou_span_a and current_price < senkou_span_b and 
-            tenkan_sen < kijun_sen and close_prices[-2] >= kijun_sen):
-            return "SELL"
-            
-        return None  # Không có tín hiệu
-
-    def execute_trade(self, side, current_price):
-        try:
-            # Tính toán số lượng
-            quantity = self.binance_client.calculate_order_quantity(self.symbol, self.amount)
-
-            if not quantity:
-                self.status_update.emit("Không thể tính toán số lượng lệnh")
-                return
-
-            self.status_update.emit(f"Đặt lệnh {side} với số lượng {quantity}...")
-
-            # Đặt lệnh
-            success, result = self.binance_client.place_order(
-                self.symbol, side, quantity, self.leverage, self.stop_loss, 0
-            )
-
-            if success:
-                trade_info = result
-                # Thêm thông tin phương pháp giao dịch vào thông tin giao dịch
-                trade_info['source'] = f"Auto ({self.trading_method})"
-                self.status_update.emit(f"Đã đặt lệnh {side} thành công!")
-                self.trade_update.emit(trade_info)
-            else:
-                self.status_update.emit(f"Lỗi đặt lệnh: {result}")
-
-        except Exception as e:
-            error_msg = f"Lỗi đặt lệnh (Hệ thống): {e}"
-            self.status_update.emit(error_msg)
-            logger.error(error_msg)
-
-    def stop(self):
-        logger.info("Stopping AutoTrader thread")
-        self.running = False
 
 class TradeController(QObject):
     def __init__(self, view, binance_client_model, trade_model, username):
@@ -240,6 +50,7 @@ class TradeController(QObject):
             confirm = self.view.confirm_dialog(
                 f'Xác nhận {side}', 
                 f'Bạn có chắc chắn muốn đặt lệnh {side} {quantity} {symbol} với giá {current_price} không?\n'
+                f'Đòn bẩy: {leverage}x\n'
                 f'Stop Loss: {stop_loss}\n'
                 f'Take Profit: {take_profit}'
             )
@@ -253,13 +64,15 @@ class TradeController(QObject):
             )
 
             if success:
-                # Chỉ lưu ID và thông tin cơ bản
+                # Lưu thông tin giao dịch với đòn bẩy
+                # Kết quả từ binance_client.place_order() đã được chuyển đổi sang múi giờ +7
                 minimal_trade_info = {
                     'id': result.get('id', str(int(time.time()))),
                     'symbol': symbol,
                     'side': side,
                     'source': 'Manual',
-                    'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    'leverage': leverage,  # Thêm thông tin đòn bẩy
+                    'timestamp': result.get('timestamp', datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))  # Sử dụng thời gian đã được chuyển đổi
                 }
 
                 # Lưu vào model
@@ -270,6 +83,7 @@ class TradeController(QObject):
                     "Thành công", 
                     f"Đã đặt lệnh {side} thành công\n"
                     f"Giá: {current_price}\n"
+                    f"Đòn bẩy: {leverage}x\n"
                     f"SL: {stop_loss}\n"
                     f"TP: {take_profit}"
                 )
@@ -291,7 +105,7 @@ class TradeController(QObject):
             time.sleep(0.5)
 
         try:
-            # Sử dụng trực tiếp lớp AutoTrader, không cần import
+            # Tạo đối tượng AutoTrader
             self.auto_trader = AutoTrader(
                 self.binance_client,
                 symbol,
@@ -301,8 +115,15 @@ class TradeController(QObject):
                 stop_loss,
                 trading_method
             )
+            
+            # Kết nối các tín hiệu
             self.auto_trader.trade_update.connect(self.handle_auto_trade)
             self.auto_trader.status_update.connect(self.update_auto_trading_status)
+            
+            # Kết nối tín hiệu đóng vị thế mới
+            self.auto_trader.close_position_signal.connect(self.close_position)
+            
+            # Bắt đầu thread
             self.auto_trader.start()
 
             # Cập nhật trạng thái
@@ -374,6 +195,9 @@ class TradeController(QObject):
             # 1. Lấy vị thế đang mở
             try:
                 #logger.info("Fetching position information...")
+                account_info = self.binance_client.futures_account()
+                leverage_info = {p["symbol"]: int(p["leverage"]) for p in account_info["positions"]}
+                
                 positions = self.binance_client.get_positions()
                 #logger.info(f"Received {len(positions)} positions from Binance")
                 
@@ -392,7 +216,9 @@ class TradeController(QObject):
                     position_id = f"POS_{symbol}_{side}"
                     
                     # logger.info(f"Processing position: {symbol} {side} with PnL: {unrealized_pnl}")
-                    
+                    # Đòn bẩy
+                    leverage = leverage_info.get(symbol, 1)
+
                     trade_info = {
                         'id': position_id,
                         'symbol': symbol,
@@ -403,7 +229,8 @@ class TradeController(QObject):
                         'status': "OPEN",
                         'pnl': unrealized_pnl,
                         'source': "Binance",
-                        'order_type': "Đang mở"
+                        'order_type': "Đang mở",
+                        'leverage': leverage
                     }
                     
                     # Tìm lệnh SL/TP cho vị thế này

@@ -31,8 +31,8 @@ class MainController:
         self.settings_model = SettingsModel()
 
         # Kiểm tra kết nối
-        # if self.binance_client.is_connected():
-        #     logger.info("Successfully connected to Binance API")
+        if self.binance_client.is_connected():
+            logger.info("Successfully connected to Binance API")
         if not self.binance_client.is_connected(): 
             logger.warning("Connection failed to Binance API")
 
@@ -166,7 +166,7 @@ class MainController:
         # Định nghĩa danh sách điều khiển cần quản lý
         controls = [
             self.view.timeframeComboBox,
-            self.view.tradingMethodComboBox,  # Thêm combobox phương pháp giao dịch
+            self.view.tradingMethodComboBox,  # Combobox phương pháp giao dịch
             self.view.amountSpinBox,
             self.view.leverageSpinBox,
             self.view.stopLossSpinBox,

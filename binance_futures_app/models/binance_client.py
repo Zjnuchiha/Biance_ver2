@@ -2,6 +2,7 @@ import time
 import logging
 from binance.um_futures import UMFutures
 from binance.error import ClientError
+from binance.client import Client
 import datetime
 
 logger = logging.getLogger(__name__)
@@ -202,6 +203,7 @@ class BinanceClientModel:
             order_response = self.client.new_order(**order_params)
             
             # Đặt stop loss nếu cần
+            stop_order_id = None
             if stop_loss > 0:
                 # Sử dụng giá trị thực thay vì tính theo phần trăm
                 stop_price = stop_loss
@@ -213,9 +215,11 @@ class BinanceClientModel:
                     'closePosition': True
                 }
                 
-                self.client.new_order(**stop_params)
+                stop_response = self.client.new_order(**stop_params)
+                stop_order_id = stop_response.get('orderId')
             
             # Đặt take profit nếu cần
+            take_profit_order_id = None
             if take_profit > 0:
                 # Sử dụng giá trị thực thay vì tính theo phần trăm
                 take_profit_price = take_profit
@@ -227,7 +231,28 @@ class BinanceClientModel:
                     'closePosition': True
                 }
                 
-                self.client.new_order(**take_profit_params)
+                tp_response = self.client.new_order(**take_profit_params)
+                take_profit_order_id = tp_response.get('orderId')
+            
+            # Chuyển đổi thời gian từ Binance (UTC) sang múi giờ +7
+            timestamp_str = ""
+            if 'updateTime' in order_response:
+                # Tạo đối tượng datetime ở múi giờ UTC
+                utc_time = datetime.datetime.fromtimestamp(order_response['updateTime'] / 1000, datetime.timezone.utc)
+                # Chuyển đổi sang múi giờ +7
+                local_time = utc_time.astimezone(datetime.timezone(datetime.timedelta(hours=7)))
+                # Định dạng thành chuỗi
+                timestamp_str = local_time.strftime("%Y-%m-%d %H:%M:%S")
+            elif 'transactTime' in order_response:
+                # Tạo đối tượng datetime ở múi giờ UTC
+                utc_time = datetime.datetime.fromtimestamp(order_response['transactTime'] / 1000, datetime.timezone.utc)
+                # Chuyển đổi sang múi giờ +7
+                local_time = utc_time.astimezone(datetime.timezone(datetime.timedelta(hours=7)))
+                # Định dạng thành chuỗi
+                timestamp_str = local_time.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                # Nếu không có thông tin thời gian từ Binance, sử dụng thời gian hiện tại (đã ở múi giờ cục bộ)
+                timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             # Tạo đối tượng kết quả
             trade_info = {
@@ -236,11 +261,14 @@ class BinanceClientModel:
                 'side': side,
                 'price': current_price,
                 'quantity': quantity,
-                'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'timestamp': timestamp_str,
                 'status': order_response['status'],
                 'pnl': 0,
                 'stop_loss': stop_loss,
-                'take_profit': take_profit
+                'take_profit': take_profit,
+                'leverage': leverage,  # Thêm thông tin đòn bẩy
+                'updateTime': order_response.get('updateTime'),  # Trả về thời gian gốc từ API
+                'transactTime': order_response.get('transactTime')  # Trả về thời gian giao dịch từ API
             }
             
             return True, trade_info
