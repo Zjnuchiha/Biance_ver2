@@ -3,6 +3,7 @@ from views.login_view import LoginView
 from views.dialogs.api_key_dialog import APIKeyDialog
 from controllers.main_controller import MainController
 from models.user_model import UserModel
+from models import binance_data_singleton
 
 class LoginController:
     def __init__(self):
@@ -57,9 +58,15 @@ class LoginController:
                 # Lấy thông tin user đã cập nhật
                 user_data = self.model.get_user(username)
                 
+                # Khởi tạo BinanceDataModel singleton với API key mới
+                binance_data_singleton.get_instance(api_key, api_secret)
+                
                 # Mở giao diện chính
                 self.open_main_window(username, user_data)
         else:
+            # Khởi tạo BinanceDataModel singleton trước khi mở giao diện chính
+            binance_data_singleton.get_instance(user_data["api_key"], user_data["api_secret"])
+            
             # Mở giao diện chính
             self.open_main_window(username, user_data)
     

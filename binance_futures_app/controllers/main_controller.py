@@ -1,15 +1,12 @@
+import time
+import datetime
+import logging
 from PyQt5.QtWidgets import QApplication, QMessageBox, QTableWidgetItem
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor
 
-import time
-import datetime
-import logging
 from config.logging_config import setup_logger
-
-# Tạo logger cho module này
-logger = setup_logger(__name__)
-
+from models import binance_data_singleton
 from views.main_view import MainView
 from controllers.user_controller import UserController
 from controllers.trade_controller import TradeController
@@ -19,13 +16,21 @@ from models.binance_client import BinanceClientModel
 from models.trade_model import TradeModel
 from models.settings_model import SettingsModel
 
+# Tạo logger cho module này
+logger = setup_logger(__name__)
+
 class MainController:
     def __init__(self, username, user_data):
         self.username = username
         self.user_data = user_data
 
+        # Khởi tạo BinanceDataModel singleton
+        self.data_model = binance_data_singleton.get_instance(
+            user_data["api_key"], 
+            user_data["api_secret"]
+        )
+
         # Khởi tạo models
-        # logger.info(f"Initialization BinanceClientModel with API key: {'*****' if user_data['api_key'] else 'does not exist'}")
         self.binance_client = BinanceClientModel(user_data["api_key"], user_data["api_secret"])
         self.trade_model = TradeModel()
         self.settings_model = SettingsModel()
@@ -33,7 +38,7 @@ class MainController:
         # Kiểm tra kết nối
         if self.binance_client.is_connected():
             logger.info("Successfully connected to Binance API")
-        if not self.binance_client.is_connected(): 
+        else:
             logger.warning("Connection failed to Binance API")
 
         # Khởi tạo view
@@ -60,6 +65,8 @@ class MainController:
         """Thiết lập các controllers phụ"""
         self.trade_controller = TradeController(self.view, self.binance_client, self.trade_model, self.username)
         self.price_updater = None
+        # Gán tham chiếu đến main_controller cho trade_controller
+        self.trade_controller.main_controller = self
 
     def connect_signals(self):
         """Kết nối các signals"""
@@ -84,13 +91,23 @@ class MainController:
             # Cập nhật thông tin người dùng nếu có thay đổi
             self.user_data = user_controller.get_updated_user_data()
 
-            # Kiểm tra nếu API key thay đổi, khởi tạo lại binance client
+            # Kiểm tra nếu API key thay đổi, cập nhật BinanceDataModel
             if (self.user_data["api_key"] != self.binance_client.api_key or 
                 self.user_data["api_secret"] != self.binance_client.api_secret):
+                
+                # Cập nhật BinanceDataModel
+                self.data_model.update_api_credentials(
+                    self.user_data["api_key"], 
+                    self.user_data["api_secret"]
+                )
+                
+                # Cập nhật binance_client
                 self.binance_client = BinanceClientModel(
                     self.user_data["api_key"], 
                     self.user_data["api_secret"]
                 )
+                
+                # Khởi động lại price updater
                 self.start_price_updater()
 
     def logout(self):
@@ -103,6 +120,9 @@ class MainController:
         # Dừng các thread đang chạy
         if self.price_updater:
             self.price_updater.stop()
+        
+        # Dừng thread cập nhật của BinanceDataModel
+        self.data_model.stop_update_thread()
 
         # Mở cửa sổ đăng nhập mới
         from controllers.login_controller import LoginController
@@ -333,12 +353,5 @@ class MainController:
         self.timer.start(refresh_interval)
 
     def auto_refresh_trades(self):
-        """Tự động làm mới dữ liệu giao dịch"""
-        self.load_trades()
-
-    def setup_controllers(self):
-        """Thiết lập các controllers phụ"""
-        self.trade_controller = TradeController(self.view, self.binance_client, self.trade_model, self.username)
-        # Gán tham chiếu đến main_controller cho trade_controller
-        self.trade_controller.main_controller = self
-        self.price_updater = None
+            """Tự động làm mới dữ liệu giao dịch"""
+            self.load_trades()

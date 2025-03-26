@@ -1,6 +1,7 @@
 import time
 from PyQt5.QtCore import QThread, pyqtSignal
 from config.logging_config import setup_logger
+from models import binance_data_singleton
 
 # Tạo logger cho module này
 logger = setup_logger(__name__)
@@ -15,6 +16,8 @@ class PriceUpdater(QThread):
         self.binance_client = binance_client
         self.symbol = symbol
         self.running = True
+        # Lấy tham chiếu đến data model
+        self.data_model = binance_data_singleton.get_instance()
         # Thêm biến để kiểm soát tốc độ cập nhật
         self.price_update_interval = 1.0  # Cập nhật giá mỗi 1 giây
         self.balance_update_interval = 5.0  # Cập nhật số dư mỗi 5 giây
@@ -62,7 +65,8 @@ class PriceUpdater(QThread):
     def update_price(self):
         """Cập nhật giá"""
         try:
-            price = self.binance_client.get_ticker_price(self.symbol)
+            # Sử dụng data model để lấy giá
+            price = self.data_model.get_ticker_price(self.symbol)
             if price:
                 self.price_update.emit(str(price))
         except Exception as e:
@@ -72,7 +76,8 @@ class PriceUpdater(QThread):
     def update_balance(self):
         """Cập nhật số dư"""
         try:
-            account_response = self.binance_client.get_account_balance()
+            # Sử dụng data model để lấy thông tin tài khoản
+            account_response = self.data_model.get_account_balance()
             
             if account_response and 'assets' in account_response:
                 # Tạo dict để lưu số dư
